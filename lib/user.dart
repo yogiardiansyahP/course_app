@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:project_akhir_app/checkout.dart';
+import 'package:project_akhir_app/profil.dart';
 
 class CodeinCourseApp extends StatelessWidget {
   @override
@@ -28,12 +29,21 @@ class CourseHomePage extends StatelessWidget {
           children: [
             // Header Row
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: const [
-                Icon(Icons.person_outline),
-                Icon(Icons.share_outlined),
-              ],
-            ),
+  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  children: [
+    IconButton(
+      icon: Icon(Icons.person_outline),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => ProfilScreen()),
+        );
+      },
+    ),
+    
+  ],
+),
+
             const SizedBox(height: 16),
             // Statistics Row
             Row(
