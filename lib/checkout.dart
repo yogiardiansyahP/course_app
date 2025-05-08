@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:project_akhir_app/materi.dart';
+
+import 'package:project_akhir_app/course.dart';
 
 class CheckoutPage extends StatelessWidget {
   const CheckoutPage({super.key});
@@ -104,7 +105,7 @@ class CheckoutPage extends StatelessWidget {
     onPressed: () {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const VideoLessonPage()),
+        MaterialPageRoute(builder: (context) => const CourseListPage()),
       );
     },
     style: ElevatedButton.styleFrom(
