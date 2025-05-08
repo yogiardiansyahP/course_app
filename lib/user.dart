@@ -170,6 +170,14 @@ class CourseHomePage extends StatelessWidget {
                 fit: BoxFit.cover,
                 height: 150,
                 width: double.infinity,
+                errorBuilder: (context, error, stackTrace) {
+    return Container(
+      width: 400,
+      height: 150,
+      color: Colors.grey[300],
+      child: const Icon(Icons.broken_image, size: 40),
+    );
+  },
               ),
             ),
             Padding(

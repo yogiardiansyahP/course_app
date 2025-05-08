@@ -57,6 +57,14 @@ class VideoLessonPage extends StatelessWidget {
                   child: Image.asset(
                     'asset/image/vidio.png', // ganti sesuai path Anda
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+    return Container(
+      width: 500,
+      height: 200,
+      color: Colors.grey[300],
+      child: const Icon(Icons.broken_image, size: 40),
+    );
+  },
                   ),
                 ),
               ),

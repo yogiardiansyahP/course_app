@@ -21,6 +21,14 @@ class CourseListPage extends StatelessWidget {
                   'assets/logo.png', 
                   width: 60,
                   height: 60,
+                  errorBuilder: (context, error, stackTrace) {
+    return Container(
+      width: 100,
+      height: 80,
+      color: Colors.grey[300],
+      child: const Icon(Icons.broken_image, size: 40),
+    );
+  },
                 ),
               ),
               const SizedBox(height: 20),
@@ -84,6 +92,14 @@ Row(
               height: 180,
               width: double.infinity,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+    return Container(
+      width: 400,
+      height: 180,
+      color: Colors.grey[300],
+      child: const Icon(Icons.broken_image, size: 40),
+    );
+  },
             ),
           ),
           Padding(

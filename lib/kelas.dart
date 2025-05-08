@@ -48,11 +48,20 @@ class KelasPage extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Image.asset(
-              course['image']!,
-              width: 100,
-              height: 80,
-              fit: BoxFit.cover,
-            ),
+  course['image']!,
+  width: 100,
+  height: 80,
+  fit: BoxFit.cover,
+  errorBuilder: (context, error, stackTrace) {
+    return Container(
+      width: 100,
+      height: 80,
+      color: Colors.grey[300],
+      child: const Icon(Icons.broken_image, size: 40),
+    );
+  },
+)
+
           ),
           const SizedBox(width: 12),
           Expanded(
