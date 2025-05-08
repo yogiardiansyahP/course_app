@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:project_akhir_app/materi.dart';
+import 'package:project_akhir_app/kelas.dart';
 
 class CourseListPage extends StatelessWidget {
   const CourseListPage({super.key});
@@ -25,22 +26,36 @@ class CourseListPage extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Chips
-              Wrap(
-                spacing: 8,
-                children: [
-                  Chip(
-                    label: const Text("Lihat Lebih Banyak Kelas"),
-                    backgroundColor: Colors.grey.shade200,
-                  ),
-                  Chip(
-                    label: const Text(
-                      "Kursus yang sedang di pelajari",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    backgroundColor: const Color(0xFF3B82F6),
-                  ),
-                ],
-              ),
+              // Chips dalam Row
+Row(
+  children: [
+    InkWell(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) =>  KelasPage()),
+        );
+      },
+      child: Chip(
+        label: const Text(
+          "Lihat Lebih Banyak Kelas",
+          style: TextStyle(fontSize: 11.5),
+        ),
+        backgroundColor: Colors.grey.shade200,
+      ),
+    ),
+    const SizedBox(width: 8),
+    Chip(
+      label: const Text(
+        "Kursus yang sedang di pelajari",
+        style: TextStyle(color: Colors.white, fontSize: 11.5),
+      ),
+      backgroundColor: const Color(0xFF3B82F6),
+    ),
+  ],
+),
+
+
               const SizedBox(height: 20),
 
               // List of Courses
@@ -65,7 +80,7 @@ class CourseListPage extends StatelessWidget {
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             child: Image.asset(
-              'assets/course_thumbnail.jpg',
+              'asset/image/vidio.png',
               height: 180,
               width: double.infinity,
               fit: BoxFit.cover,
