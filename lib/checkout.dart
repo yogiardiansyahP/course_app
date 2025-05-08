@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:project_akhir_app/materi.dart';
 
 class CheckoutPage extends StatelessWidget {
   const CheckoutPage({super.key});
@@ -22,13 +23,15 @@ class CheckoutPage extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: ElevatedButton(
                 onPressed: () {
-                  // Navigasi ke halaman kelas
+                 
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF3B82F6),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Kelas'),
+                child: const Text('Kelas',
+                style: TextStyle(color: Colors.white))
+                
               ),
             ),
             const SizedBox(height: 12),
@@ -95,24 +98,27 @@ class CheckoutPage extends StatelessWidget {
 
             // Tombol Bayar
             SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: ElevatedButton(
-                onPressed: () {
-                  // Aksi pembayaran
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF60A5FA),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'Bayar Sekarang',
-                  style: TextStyle(fontSize: 16),
-                ),
-              ),
-            ),
+  width: double.infinity,
+  height: 50,
+  child: ElevatedButton(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const VideoLessonPage()),
+      );
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF60A5FA),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+    ),
+    child: const Text(
+      'Bayar Sekarang',
+      style: TextStyle(color: Colors.white, fontSize: 16),
+    ),
+  ),
+),
           ],
         ),
       ),
