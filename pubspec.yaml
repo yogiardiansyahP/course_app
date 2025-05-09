@@ -13,6 +13,13 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   fl_chart: ^0.64.0
+  http: ^1.4.0
+  midtrans_sdk: ^1.0.0
+  url_launcher: ^6.3.1
+  webview_flutter: ^4.11.0
+  flutter_secure_storage: ^9.2.4
+  shared_preferences: ^2.5.3
+  midtrans_snap: ^1.0.1
 
 dev_dependencies:
   flutter_test:

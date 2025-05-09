@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:project_akhir_app/checkout.dart';
 import 'package:project_akhir_app/profil.dart';
+import 'package:project_akhir_app/services/api_service.dart';
 
 class CodeinCourseApp extends StatelessWidget {
   @override
@@ -62,9 +63,9 @@ class CourseHomePage extends StatelessWidget {
             const SizedBox(height: 6),
 
             // Course Card (dipanggil dengan context)
-            _courseCard(context, courseTitle, originalPrice, discountedPrice),
+            _courseCard(context, courseTitle, originalPrice, discountedPrice, token, courseId)
             const SizedBox(height: 12),
-            _courseCard(context, courseTitle, originalPrice, discountedPrice),
+            _courseCard(context, courseTitle, originalPrice, discountedPrice, token, courseId)
 
             const SizedBox(height: 20),
             const Text("Progress Belajar", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -147,57 +148,68 @@ class CourseHomePage extends StatelessWidget {
     );
   }
 
-  Widget _courseCard(BuildContext context, String courseTitle, int originalPrice, int discountedPrice) {
-    return GestureDetector(
-      onTap: () {
+Widget _courseCard(BuildContext context, String courseTitle, int originalPrice, int discountedPrice, String token, int courseId) {
+  return GestureDetector(
+    onTap: () async {
+      // Fetch checkout data from the API
+      ApiService apiService = ApiService();
+      try {
+        Map<String, dynamic> checkoutData = await apiService.showCheckout(token, courseId);
+        // Navigate to the CheckoutPage with the fetched data
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const CheckoutPage()),
+          MaterialPageRoute(builder: (context) => CheckoutPage(token: token, checkoutData: checkoutData)),
         );
-      },
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: Colors.grey.shade100,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-              child: Image.asset(
-                "assets/course.jpg",
-                fit: BoxFit.cover,
-                height: 150,
-                width: double.infinity,
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(courseTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  Text(
-                    "Rp. ${_formatRupiah(originalPrice)}",
-                    style: const TextStyle(
-                      color: Colors.red,
-                      decoration: TextDecoration.lineThrough,
-                    ),
-                  ),
-                  Text(
-                    "Rp. ${_formatRupiah(discountedPrice)}",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            )
-          ],
-        ),
+      } catch (e) {
+        // Handle error (e.g., show a dialog or a snackbar)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load checkout data: $e')),
+        );
+      }
+    },
+    child: Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Colors.grey.shade100,
       ),
-    );
-  }
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            child: Image.asset(
+              "assets/course.jpg",
+              fit: BoxFit.cover,
+              height: 150,
+              width: double.infinity,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(courseTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                Text(
+                  "Rp. ${_formatRupiah(originalPrice)}",
+                  style: const TextStyle(
+                    color: Colors.red,
+                    decoration: TextDecoration.lineThrough,
+                  ),
+                ),
+                Text(
+                  "Rp. ${_formatRupiah(discountedPrice)}",
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          )
+        ],
+      ),
+    ),
+  );
+}
 
   static String _formatRupiah(int amount) {
     return amount.toString().replaceAllMapped(

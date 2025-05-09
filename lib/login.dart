@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:project_akhir_app/user.dart'; 
-import 'package:project_akhir_app/register.dart'; // Sesuaikan path register_page.dart
+import 'package:project_akhir_app/services/api_service.dart';
+import 'package:project_akhir_app/user.dart';
+import 'package:project_akhir_app/register.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+
     return Scaffold(
       backgroundColor: const Color(0xFF2563EB),
       body: SingleChildScrollView(
@@ -38,6 +42,7 @@ class LoginPage extends StatelessWidget {
                   const Text('Email', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 8),
                   TextField(
+                    controller: emailController,
                     decoration: InputDecoration(
                       hintText: 'Email',
                       border: UnderlineInputBorder(),
@@ -47,6 +52,7 @@ class LoginPage extends StatelessWidget {
                   const Text('Password', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 8),
                   TextField(
+                    controller: passwordController,
                     obscureText: true,
                     decoration: InputDecoration(
                       hintText: 'Masukkan Password',
@@ -76,11 +82,18 @@ class LoginPage extends StatelessWidget {
                     width: double.infinity,
                     height: 50,
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => CodeinCourseApp()),
-                        );
+                      onPressed: () async {
+                        final auth = ApiService();
+                        final result = await auth.login(emailController.text, passwordController.text);
+
+                        if (result['token'] != null) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => CodeinCourseApp()),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'] ?? 'Login gagal')));
+                        }
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF2563EB),

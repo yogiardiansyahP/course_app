@@ -1,16 +1,66 @@
 import 'package:flutter/material.dart';
-
-import 'package:project_akhir_app/course.dart';
+import 'package:midtrans_snap/midtrans_snap.dart';
+import 'package:midtrans_snap/models.dart';
+import 'dart:convert';
+import '../services/api_service.dart';
 
 class CheckoutPage extends StatelessWidget {
-  const CheckoutPage({super.key});
+  final String token;
+
+  CheckoutPage({super.key, required this.token, required Map<String, dynamic> checkoutData});
+
+  final int hargaAwal = 2500000;
+  final String courseName = 'Belajar Java Script Dari Nol';
+  final String voucher = 'CODEINCOURSEIDNBGR';
+  final String clientKey = 'SB-Mid-client-OTstuStuahPgY8tT';
+
+  Future<void> _handlePayment(BuildContext context) async {
+    try {
+      final apiService = ApiService();
+      final response = await apiService.postData(
+        '/get-snap-token',
+        {
+          'hargaAwal': hargaAwal,
+          'course_name': courseName,
+          'voucher': voucher,
+        },
+        token: token,
+        useSnapTokenBaseUrl: true,
+      );
+
+      if (response.statusCode == 200) {
+        final snapToken = jsonDecode(response.body)['token'];
+
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MidtransSnap(
+              mode: MidtransEnvironment.sandbox,
+              token: snapToken,
+              midtransClientKey: clientKey,
+              onPageFinished: (url) => print('Page finished: $url'),
+              onPageStarted: (url) => print('Page started: $url'),
+              onResponse: (result) {
+                print('Midtrans Result: ${result.toJson()}');
+                Navigator.pop(context);
+              },
+            ),
+          ),
+        );
+      } else {
+        print('Gagal mendapatkan token: ${response.body}');
+      }
+    } catch (e) {
+      print('Terjadi kesalahan: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pembayaran'),
-        leading: BackButton(color: Colors.black),
+        leading: const BackButton(color: Colors.black),
         backgroundColor: Colors.white,
         elevation: 1,
       ),
@@ -19,31 +69,23 @@ class CheckoutPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Button Kelas
-            Align(
-              alignment: Alignment.centerLeft,
-              child: ElevatedButton(
-                onPressed: () {
-                 
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3B82F6),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF3B82F6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text('Kelas',
-                style: TextStyle(color: Colors.white))
-                
               ),
+              child: const Text('Kelas', style: TextStyle(color: Colors.white)),
             ),
             const SizedBox(height: 12),
-
-            // Card Course
             Row(
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
                   child: Image.asset(
-                    'assets/course-image-placeholder.png', // Pastikan ada gambar ini di folder assets
+                    'assets/course-image-placeholder.png',
                     width: 100,
                     height: 70,
                     fit: BoxFit.cover,
@@ -53,29 +95,15 @@ class CheckoutPage extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: const [
-                    Text(
-                      'Belajar Java Script Dari Nol',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      'Rp. 2.500.000',
-                      style: TextStyle(
-                        decoration: TextDecoration.lineThrough,
-                        color: Colors.red,
-                      ),
-                    ),
+                    Text('Belajar Java Script Dari Nol', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('Rp. 2.500.000', style: TextStyle(decoration: TextDecoration.lineThrough, color: Colors.red)),
                     Text('Rp. 250.000'),
                   ],
                 ),
               ],
             ),
             const SizedBox(height: 24),
-
-            // Metode Pembayaran
-            const Text(
-              'Metode Pembayaran',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
+            const Text('Metode Pembayaran', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 12),
             _paymentMethodTile(Icons.account_balance, 'Bank Transfer'),
             const SizedBox(height: 8),
@@ -83,50 +111,34 @@ class CheckoutPage extends StatelessWidget {
             const SizedBox(height: 8),
             _paymentMethodTile(Icons.qr_code, 'QRIS'),
             const SizedBox(height: 24),
-
-            // Rincian
-            const Text(
-              'Rincian Pembayaran',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
+            const Text('Rincian Pembayaran', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
             const SizedBox(height: 8),
             _detailRow('Course', 'Belajar Java Script Dari Nol'),
             _detailRow('Mentor', 'Ervan'),
             _detailRow('Harga', 'Rp 2.500.000'),
             _detailRow('Diskon', '-Rp 250.000'),
-
             const SizedBox(height: 24),
-
-            // Tombol Bayar
             SizedBox(
-  width: double.infinity,
-  height: 50,
-  child: ElevatedButton(
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const CourseListPage()),
-      );
-    },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF60A5FA),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-    ),
-    child: const Text(
-      'Bayar Sekarang',
-      style: TextStyle(color: Colors.white, fontSize: 16),
-    ),
-  ),
-),
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () => _handlePayment(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF60A5FA),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Bayar Sekarang', style: TextStyle(color: Colors.white, fontSize: 16)),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _paymentMethodTile(IconData icon, String label) {
+  static Widget _paymentMethodTile(IconData icon, String label) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -143,7 +155,7 @@ class CheckoutPage extends StatelessWidget {
     );
   }
 
-  Widget _detailRow(String label, String value) {
+  static Widget _detailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
