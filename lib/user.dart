@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:project_akhir_app/checkout.dart';
 import 'package:project_akhir_app/profil.dart';
-import 'package:project_akhir_app/services/api_service.dart';
 
 class CodeinCourseApp extends StatelessWidget {
   @override
@@ -28,25 +26,21 @@ class CourseHomePage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Header Row
             Row(
-  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-  children: [
-    IconButton(
-      icon: Icon(Icons.person_outline),
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => ProfilScreen()),
-        );
-      },
-    ),
-    
-  ],
-),
-
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.person_outline),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => ProfilScreen()),
+                    );
+                  },
+                ),
+              ],
+            ),
             const SizedBox(height: 16),
-            // Statistics Row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
@@ -61,17 +55,12 @@ class CourseHomePage extends StatelessWidget {
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 6),
-
-            // Course Card (dipanggil dengan context)
-            _courseCard(context, courseTitle, originalPrice, discountedPrice, token, courseId)
+            _courseCard(context, courseTitle, originalPrice, discountedPrice),
             const SizedBox(height: 12),
-            _courseCard(context, courseTitle, originalPrice, discountedPrice, token, courseId)
-
+            _courseCard(context, courseTitle, originalPrice, discountedPrice),
             const SizedBox(height: 20),
             const Text("Progress Belajar", style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 12),
-
-            // Line Chart
             Container(
               height: 200,
               decoration: BoxDecoration(
@@ -148,68 +137,108 @@ class CourseHomePage extends StatelessWidget {
     );
   }
 
-Widget _courseCard(BuildContext context, String courseTitle, int originalPrice, int discountedPrice, String token, int courseId) {
-  return GestureDetector(
-    onTap: () async {
-      // Fetch checkout data from the API
-      ApiService apiService = ApiService();
-      try {
-        Map<String, dynamic> checkoutData = await apiService.showCheckout(token, courseId);
-        // Navigate to the CheckoutPage with the fetched data
+  Widget _courseCard(BuildContext context, String courseTitle, int originalPrice, int discountedPrice) {
+    return GestureDetector(
+      onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => CheckoutPage(token: token, checkoutData: checkoutData)),
-        );
-      } catch (e) {
-        // Handle error (e.g., show a dialog or a snackbar)
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load checkout data: $e')),
-        );
-      }
-    },
-    child: Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Colors.grey.shade100,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: Image.asset(
-              "assets/course.jpg",
-              fit: BoxFit.cover,
-              height: 150,
-              width: double.infinity,
+          MaterialPageRoute(
+            builder: (context) => CheckoutPage(
+              courseTitle: courseTitle,
+              originalPrice: originalPrice,
+              discountedPrice: discountedPrice,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(courseTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text(
-                  "Rp. ${_formatRupiah(originalPrice)}",
-                  style: const TextStyle(
-                    color: Colors.red,
-                    decoration: TextDecoration.lineThrough,
-                  ),
-                ),
-                Text(
-                  "Rp. ${_formatRupiah(discountedPrice)}",
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ],
+        );
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.grey.shade100,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: Image.asset(
+                "assets/course.jpg",
+                fit: BoxFit.cover,
+                height: 150,
+                width: double.infinity,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: 400,
+                    height: 150,
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.broken_image, size: 40),
+                  );
+                },
+              ),
             ),
-          )
-        ],
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(courseTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Rp. ${_formatRupiah(originalPrice)}",
+                    style: const TextStyle(
+                      color: Colors.red,
+                      decoration: TextDecoration.lineThrough,
+                    ),
+                  ),
+                  Text(
+                    "Rp. ${_formatRupiah(discountedPrice)}",
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            )
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
+
+  static String _formatRupiah(int amount) {
+    return amount.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]}.',
+    );
+  }
 }
+
+class CheckoutPage extends StatelessWidget {
+  final String courseTitle;
+  final int originalPrice;
+  final int discountedPrice;
+
+  const CheckoutPage({
+    Key? key,
+    required this.courseTitle,
+    required this.originalPrice,
+    required this.discountedPrice,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(courseTitle)),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Text('Course: $courseTitle'),
+            Text('Original Price: Rp. ${_formatRupiah(originalPrice)}'),
+            Text('Discounted Price: Rp. ${_formatRupiah(discountedPrice)}'),
+          ],
+        ),
+      ),
+    );
+  }
 
   static String _formatRupiah(int amount) {
     return amount.toString().replaceAllMapped(

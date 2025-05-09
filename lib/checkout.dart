@@ -88,7 +88,14 @@ class CheckoutPage extends StatelessWidget {
                     'assets/course-image-placeholder.png',
                     width: 100,
                     height: 70,
-                    fit: BoxFit.cover,
+                    fit: BoxFit.cover,errorBuilder: (context, error, stackTrace) {
+    return Container(
+      width: 100,
+      height: 70,
+      color: Colors.grey[300],
+      child: const Icon(Icons.broken_image, size: 40),
+    );
+  },
                   ),
                 ),
                 const SizedBox(width: 12),

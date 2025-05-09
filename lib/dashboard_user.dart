@@ -93,7 +93,14 @@ class CourseCard extends StatelessWidget {
               'assets/course.jpg', // Ganti dengan asset kamu
               width: double.infinity,
               height: 150,
-              fit: BoxFit.cover,
+              fit: BoxFit.cover,errorBuilder: (context, error, stackTrace) {
+    return Container(
+      width: 400,
+      height: 150,
+      color: Colors.grey[300],
+      child: const Icon(Icons.broken_image, size: 40),
+    );
+  },
             ),
           ),
           Padding(
