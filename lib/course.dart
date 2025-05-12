@@ -9,6 +9,16 @@ class CourseListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Navigator.pop(context); // kembali ke halaman sebelumnya
+          },
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -18,52 +28,49 @@ class CourseListPage extends StatelessWidget {
               // Logo
               Center(
                 child: Image.asset(
-                  'assets/logo.png', 
+                  'assets/logo.png',
                   width: 60,
                   height: 60,
                   errorBuilder: (context, error, stackTrace) {
-    return Container(
-      width: 100,
-      height: 80,
-      color: Colors.grey[300],
-      child: const Icon(Icons.broken_image, size: 40),
-    );
-  },
+                    return Container(
+                      width: 100,
+                      height: 80,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.broken_image, size: 40),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 20),
 
-              // Chips
               // Chips dalam Row
-Row(
-  children: [
-    InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) =>  KelasPage()),
-        );
-      },
-      child: Chip(
-        label: const Text(
-          "Lihat Lebih Banyak Kelas",
-          style: TextStyle(fontSize: 11.5),
-        ),
-        backgroundColor: Colors.grey.shade200,
-      ),
-    ),
-    const SizedBox(width: 8),
-    Chip(
-      label: const Text(
-        "Kursus yang sedang di pelajari",
-        style: TextStyle(color: Colors.white, fontSize: 11.5),
-      ),
-      backgroundColor: const Color(0xFF3B82F6),
-    ),
-  ],
-),
-
-
+              Row(
+                children: [
+                  InkWell(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const KelasPage()),
+                      );
+                    },
+                    child: Chip(
+                      label: const Text(
+                        "Lihat Lebih Banyak Kelas",
+                        style: TextStyle(fontSize: 10),
+                      ),
+                      backgroundColor: Colors.grey.shade200,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Chip(
+                    label: const Text(
+                      "Kursus yang sedang di pelajari",
+                      style: TextStyle(color: Colors.white, fontSize: 10),
+                    ),
+                    backgroundColor: const Color(0xFF3B82F6),
+                  ),
+                ],
+              ),
               const SizedBox(height: 20),
 
               // List of Courses
@@ -93,13 +100,13 @@ Row(
               width: double.infinity,
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
-    return Container(
-      width: 400,
-      height: 180,
-      color: Colors.grey[300],
-      child: const Icon(Icons.broken_image, size: 40),
-    );
-  },
+                return Container(
+                  width: 400,
+                  height: 180,
+                  color: Colors.grey[300],
+                  child: const Icon(Icons.broken_image, size: 40),
+                );
+              },
             ),
           ),
           Padding(
@@ -113,25 +120,24 @@ Row(
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const VideoLessonPage()),
-    );
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xFF60A5FA),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(8),
-    ),
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-  ),
-  child: const Text(
-    "Lanjutkan Belajar",
-    style: TextStyle(color: Colors.white),
-  ),
-),
-
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const VideoLessonPage()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF60A5FA),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
+                  child: const Text(
+                    "Lanjutkan Belajar",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                ),
               ],
             ),
           ),

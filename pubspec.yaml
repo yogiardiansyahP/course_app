@@ -22,7 +22,9 @@ dependencies:
   midtrans_snap: ^1.0.1
 
 dev_dependencies:
-  flutter_test:
+ url_launcher: ^6.0.10
+
+flutter_test:
     sdk: flutter
 
 flutter:

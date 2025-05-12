@@ -1,32 +1,22 @@
 import 'package:flutter/material.dart';
 
-
 class VideoLessonPage extends StatelessWidget {
   const VideoLessonPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: BackButton(color: Colors.black),
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Tombol kembali
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Row(
-                  children: const [
-                    Icon(Icons.arrow_back, size: 20),
-                    SizedBox(width: 5),
-                    Text("Kembali", style: TextStyle(fontSize: 14)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // Judul
               const Text(
                 "Belajar java script dari nol",
                 style: TextStyle(
@@ -37,7 +27,6 @@ class VideoLessonPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // Subjudul
               const Text(
                 "Variabel dan tipe data (vtd) Part 1-2",
                 style: TextStyle(
@@ -47,7 +36,6 @@ class VideoLessonPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
-              // Gambar
               ClipRRect(
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
@@ -55,29 +43,27 @@ class VideoLessonPage extends StatelessWidget {
                     border: Border.all(color: Color(0xFF3366FF), width: 2),
                   ),
                   child: Image.asset(
-                    'asset/image/vidio.png', // ganti sesuai path Anda
+                    'asset/image/vidio.png',
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) {
-    return Container(
-      width: 500,
-      height: 200,
-      color: Colors.grey[300],
-      child: const Icon(Icons.broken_image, size: 40),
-    );
-  },
+                      return Container(
+                        width: 500,
+                        height: 200,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.broken_image, size: 40),
+                      );
+                    },
                   ),
                 ),
               ),
               const SizedBox(height: 10),
 
-              // Deskripsi file
               const Text(
                 "File variabel dan tipe data (vtd) Part 1-2",
                 style: TextStyle(fontSize: 14),
               ),
               const SizedBox(height: 5),
 
-              // Tautan laporkan
               Row(
                 children: const [
                   Text("Ada masalah dengan konten ini? "),
@@ -92,27 +78,18 @@ class VideoLessonPage extends StatelessWidget {
               ),
               const Spacer(),
 
-              // Tombol navigasi
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF3366FF),
-                    ),
-                    onPressed: () {},
-                    icon: const Icon(Icons.arrow_back,color: Colors.white),
-                    label: const Text("Kembali",style: TextStyle(color: Colors.white)),
+              Align(
+                alignment: Alignment.centerRight,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF3366FF),
                   ),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF3366FF),
-                    ),
-                    onPressed: () {},
-                    icon: const Text("Selanjutnya",style: TextStyle(color: Colors.white)),
-                    label: const Icon(Icons.arrow_forward,color: Colors.white),
-                  ),
-                ],
+                  onPressed: () {
+                    // TODO: Implement "next" lesson navigation
+                  },
+                  icon: const Text("Selanjutnya", style: TextStyle(color: Colors.white)),
+                  label: const Icon(Icons.arrow_forward, color: Colors.white),
+                ),
               ),
             ],
           ),
