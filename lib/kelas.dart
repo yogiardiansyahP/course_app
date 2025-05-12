@@ -32,7 +32,7 @@ class KelasPage extends StatelessWidget {
             const SizedBox(height: 24),
 
             // List Course Cards
-            ..._courseList.map((course) => _buildCourseItem(context, course)).toList(),
+            ..._courseList.map((course) => _buildCourseItem(context, course)),
           ],
         ),
       ),

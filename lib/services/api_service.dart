@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   final String baseUrl = 'http://127.0.0.1:8000/api';
-   final String snapTokenBaseUrl = 'http://localhost:26561/';
+   final String snapTokenBaseUrl = 'http://127.0.0.1:8000';
 
   Future<http.Response> postData(String endpoint, Map<String, dynamic> body, {String? token, bool useSnapTokenBaseUrl = false}) {
     final String fullUrl = useSnapTokenBaseUrl 
@@ -19,6 +19,61 @@ class ApiService {
       },
       body: jsonEncode(body),
     );
+  }
+
+  Future<List<double>> getChartProgress(String token) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/progress-chart'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    
+    if (response.statusCode == 200) {
+      try {
+        List<dynamic> data = jsonDecode(response.body);
+        return data.map((e) => (e as num).toDouble()).toList();
+      } catch (e) {
+        throw Exception('Failed to decode progress data: $e');
+      }
+    } else {
+      throw Exception('Failed to load progress chart. Status: ${response.statusCode}');
+    }
+  }
+
+  Future<List<dynamic>> getCoursesFromApi(String token) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api-datacourse'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      try {
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        if (responseData['success'] == true) {
+          List<dynamic> courses = responseData['data'];
+          return courses.map((course) {
+            return {
+              'id': course['id'],
+              'name': course['name'],
+              'thumbnail': course['thumbnail'],
+              'mentor': course['mentor'],
+              'price': course['price'],
+              'materials': course['materials'] ?? [],
+            };
+          }).toList();
+        } else {
+          throw Exception('Failed to load courses');
+        }
+      } catch (e) {
+        throw Exception('Failed to decode courses data: $e');
+      }
+    } else {
+      throw Exception('Failed to load courses. Status: ${response.statusCode}');
+    }
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {
@@ -84,44 +139,61 @@ class ApiService {
     }
   }
 
-    Future<Map<String, dynamic>> getSnapToken({
-    required String token,
-    required int courseId,
-    required int hargaAwal,
-    String? voucher,
-    required String courseName,
-  }) async {
-    try {
-      final response = await postData(
-        '/get-snap-token', 
-        {
-          'course_id': courseId,
-          'hargaAwal': hargaAwal,
-          'voucher': voucher ?? '',
-          'course_name': courseName,
+ Future<Map<String, dynamic>> getSnapToken({
+  required String token,
+  required int courseId,
+  required int hargaAwal,
+  String? voucher,
+  required String courseName,
+}) async {
+  try {
+    final orderId = 'ORDER-${DateTime.now().millisecondsSinceEpoch}';
+    
+    final response = await postData(
+      '$snapTokenBaseUrl/get-snap-token',
+      {
+        'transaction_details': {
+          'order_id': orderId,
+          'gross_amount': hargaAwal,
         },
-        token: token,
-        useSnapTokenBaseUrl: true,
-      );
+        'item_details': [
+          {
+            'id': '$courseId',
+            'name': courseName,
+            'price': hargaAwal,
+            'quantity': 1,
+          },
+        ],
+        'customer_details': {
+          'email': 'user@example.com',
+        },
+      },
+      token: token,
+    );
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        throw Exception('Failed to get snap token: ${response.body}');
-      }
-    } catch (e) {
-      throw Exception('Error occurred while fetching snap token: $e');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to get snap token: ${response.body}');
     }
+  } catch (e) {
+    throw Exception('Error occurred while fetching snap token: $e');
   }
+}
 
-  Future<Map<String, dynamic>> saveTransaction(String token, Map<String, dynamic> transactionData) async {
+Future<Map<String, dynamic>> saveTransaction(String token, Map<String, dynamic> transactionData) async {
+  try {
     final response = await postData('/checkout/save', transactionData, token: token);
+
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to save transaction');
     }
+  } catch (e) {
+    throw Exception('Error occurred while saving transaction: $e');
   }
+}
 
   Future<Map<String, dynamic>> updateProfile(String token, Map<String, dynamic> profileData) async {
     final response = await http.put(

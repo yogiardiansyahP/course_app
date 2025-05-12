@@ -4,6 +4,8 @@ import 'package:project_akhir_app/hubungi_kami.dart'; // Import the HubungiKamiP
 import 'package:project_akhir_app/login.dart'; // Import the LoginPage
 
 class ProfilScreen extends StatelessWidget {
+  const ProfilScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     // Define some styles for reuse

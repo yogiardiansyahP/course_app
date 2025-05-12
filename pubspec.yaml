@@ -21,9 +21,6 @@ dependencies:
   shared_preferences: ^2.5.3
   midtrans_snap: ^1.0.1
 
-dev_dependencies:
- url_launcher: ^6.0.10
-
 flutter_test:
     sdk: flutter
 
@@ -33,4 +30,7 @@ flutter:
   assets:
     - asset/image/
     - asset/icon/
+    - asset/images/
+dev_dependencies:
+  flutter_lints: ^5.0.0
     

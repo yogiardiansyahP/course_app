@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:project_akhir_app/hubungi_kami.dart';
-import 'package:project_akhir_app/user.dart';
 
 class TentangScreen extends StatelessWidget {
-  final String token;
-
-  const TentangScreen({super.key, required this.token});
+  const TentangScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -31,45 +28,98 @@ class TentangScreen extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-          const Divider(),
-            title: const Text("Tentang Kami"),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => CodeinCourseApp(token: token)),
-              );
-            },
-          ),
-          const Divider(height: 1),
-          ListTile(
-            title: const Text("Hubungi Kami"),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const HubungiKamiPage()),
-              );
-            },
-          ),
-          const Divider(height: 1),
-          const ListTile(
-            title: Text("Versi App"),
-            trailing: Text("1.0.0"),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            title: const Text("Keluar", style: TextStyle(color: Colors.red)),
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: const Text("Konfirmasi"),
-                  content: const Text("Apakah kamu yakin ingin keluar?"),
-                  actions: [
             const Spacer(),
             // Card konten
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+                    // Header dengan logo CSS & HTML
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Image.asset(
+                          'assets/css.png',
+                          height: 32,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 32,
+                              height: 32,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.broken_image, size: 20),
+                            );
+                          },
+                        ),
+                        const Text(
+                          'Tentang Kami',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                        Image.asset(
+                          'assets/html.png',
+                          height: 32,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 32,
+                              height: 32,
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.broken_image, size: 20),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'CodeIn Course adalah platform pembelajaran digital yang dirancang '
+                      'untuk memudahkan kamu belajar di bidang teknologi dan dunia digital. '
+                      'Kami menawarkan berbagai macam kursus pilihan untuk membantu '
+                      'mengembangkan kemampuan, meningkatkan keterampilan, dan siap '
+                      'bersaing di dunia profesional.\n\n'
+                      'Dengan materi yang up-to-date, instruktur berpengalaman, dan komunitas '
+                      'yang suportif, kami berkomitmen jadi teman belajar terbaik kamu. '
+                      'Yuk, mulai perjalanan belajar kamu bareng kami.',
+                      textAlign: TextAlign.justify,
+                      style: TextStyle(fontSize: 14),
+                    ),
+                    const SizedBox(height: 24),
+                    // Tombol aksi
+                    // Tombol aksi
+SizedBox(
+  width: double.infinity,
+  child: ElevatedButton(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const HubungiKamiPage()),
+      );
+    },
+    style: ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF3366FF),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(30),
+      ),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+    ),
+    child: const Text(
+      'Hubungi Aku',
+      style: TextStyle(fontSize: 16, color: Colors.white),
+    ),
+  ),
+),
+
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('Lewati'),
                     ),
                   ],
                 ),
