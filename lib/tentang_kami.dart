@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:project_akhir_app/hubungi_kami.dart';
-
 import 'package:project_akhir_app/user.dart';
 
 class TentangScreen extends StatelessWidget {
-  const TentangScreen({super.key});
+  final String token;
+
+  const TentangScreen({super.key, required this.token});
 
   @override
   Widget build(BuildContext context) {
@@ -34,7 +35,7 @@ class TentangScreen extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => CodeinCourseApp()),
+                MaterialPageRoute(builder: (context) => CodeinCourseApp(token: token)),
               );
             },
           ),

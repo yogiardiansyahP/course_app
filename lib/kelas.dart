@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:project_akhir_app/checkout.dart';
+// import 'package:project_akhir_app/checkout.dart';
 
 class KelasPage extends StatelessWidget {
   const KelasPage({super.key});
@@ -89,10 +89,10 @@ class KelasPage extends StatelessWidget {
   height: 32,
   child: ElevatedButton(
     onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => CheckoutPage()),
-      );
+      // Navigator.push(
+      //   context,
+      //   // MaterialPageRoute(builder: (context) => CheckoutPage()),
+      // );
     },
     style: ElevatedButton.styleFrom(
       backgroundColor: const Color(0xFF2563EB),

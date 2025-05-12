@@ -3,6 +3,7 @@ import 'package:midtrans_snap/midtrans_snap.dart';
 import 'package:midtrans_snap/models.dart';
 import 'dart:convert';
 import '../services/api_service.dart';
+import 'package:project_akhir_app/course.dart';
 
 class CheckoutPage extends StatelessWidget {
   final String token;
@@ -43,6 +44,10 @@ class CheckoutPage extends StatelessWidget {
               onResponse: (result) {
                 print('Midtrans Result: ${result.toJson()}');
                 Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const CourseListPage()),
+                );
               },
             ),
           ),
@@ -69,15 +74,16 @@ class CheckoutPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF3B82F6),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF3B82F6),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
+                child: const Text('Kelas', style: TextStyle(color: Colors.white)),
               ),
-              child: const Text('Kelas', style: TextStyle(color: Colors.white)),
             ),
             const SizedBox(height: 12),
             Row(
@@ -88,14 +94,15 @@ class CheckoutPage extends StatelessWidget {
                     'assets/course-image-placeholder.png',
                     width: 100,
                     height: 70,
-                    fit: BoxFit.cover,errorBuilder: (context, error, stackTrace) {
-    return Container(
-      width: 100,
-      height: 70,
-      color: Colors.grey[300],
-      child: const Icon(Icons.broken_image, size: 40),
-    );
-  },
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 100,
+                        height: 70,
+                        color: Colors.grey[300],
+                        child: const Icon(Icons.broken_image, size: 40),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -110,7 +117,10 @@ class CheckoutPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 24),
-            const Text('Metode Pembayaran', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              'Metode Pembayaran',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 12),
             _paymentMethodTile(Icons.account_balance, 'Bank Transfer'),
             const SizedBox(height: 8),
@@ -118,7 +128,10 @@ class CheckoutPage extends StatelessWidget {
             const SizedBox(height: 8),
             _paymentMethodTile(Icons.qr_code, 'QRIS'),
             const SizedBox(height: 24),
-            const Text('Rincian Pembayaran', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            const Text(
+              'Rincian Pembayaran',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
             const SizedBox(height: 8),
             _detailRow('Course', 'Belajar Java Script Dari Nol'),
             _detailRow('Mentor', 'Ervan'),

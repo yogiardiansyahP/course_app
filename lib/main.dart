@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:project_akhir_app/dashboard_user.dart';
-import 'package:project_akhir_app/tentang_kami.dart';
+// import 'package:project_akhir_app/tentang_kami.dart';
 import 'package:project_akhir_app/profil.dart';
 import 'package:project_akhir_app/login.dart';
 import 'package:project_akhir_app/hubungi_kami.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,14 +17,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-     initialRoute: '/',
+      initialRoute: '/splash',
       routes: {
-        '/': (context) => const SplashScreen(),
+        '/splash': (context) => const SplashScreen(),
         '/login': (context) => const LoginPage(),
         '/dashboard': (context) => const CourseListPage(),
         '/profil': (context) => ProfilScreen(),
-        '/tentang': (context) => TentangScreen(),
-        '/hubungi': (context) => HubungiKamiPage(),
+        // '/tentang': (context) => const TentangScreen(),
+        '/hubungi': (context) => const HubungiKamiPage(),
       },
     );
   }
@@ -41,10 +41,22 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 3), () {
+    _checkIfLoggedIn();
+  }
+
+  Future<void> _checkIfLoggedIn() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');  // Fetch token from shared preferences
+
+    if (token != null) {
+      // If token exists, navigate to the dashboard
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/dashboard');
-    });
+    } else {
+      // If no token, navigate to login screen
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/login');
+    }
   }
 
   @override
@@ -77,5 +89,3 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 }
-
-

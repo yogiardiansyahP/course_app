@@ -87,9 +87,11 @@ class LoginPage extends StatelessWidget {
                         final result = await auth.login(emailController.text, passwordController.text);
 
                         if (result['token'] != null) {
+                          final token = result['token'];
+
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => CodeinCourseApp()),
+                            MaterialPageRoute(builder: (context) => CodeinCourseApp(token: token)),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'] ?? 'Login gagal')));
