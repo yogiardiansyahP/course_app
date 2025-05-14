@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   final String baseUrl = 'http://127.0.0.1:8000/api';
@@ -76,21 +77,49 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> login(String email, String password) async {
+    Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await postData('/login', {'email': email, 'password': password});
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      final data = jsonDecode(response.body);
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setString('token', data['token']);
+      if (data['user'] != null && data['user']['id'] != null) {
+        prefs.setInt('user_id', data['user']['id']);
+      }
+
+      return data;
     } else {
       throw Exception('Failed to login');
     }
   }
 
-  Future<Map<String, dynamic>> register(String email, String password) async {
-    final response = await postData('/register', {'email': email, 'password': password});
+  Future<int> getUserId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final id = prefs.getInt('user_id');
+    if (id == null || id == 0) {
+      throw Exception('user_id tidak ditemukan atau 0');
+    }
+    return id;
+  }
+
+  Future<Map<String, dynamic>> register(String name, String email, String password, String passwordConfirmation) async {
+    if (password != passwordConfirmation) {
+      throw Exception('Passwords do not match');
+    }
+
+    final response = await postData('/register', {
+      'name': name,
+      'email': email,
+      'password': password,
+      'password_confirmation': passwordConfirmation,
+    });
+
     if (response.statusCode == 200) {
       return jsonDecode(response.body);
+    } else if (response.statusCode == 422) {
+      return jsonDecode(response.body);
     } else {
-      throw Exception('Failed to register');
+      throw Exception('Failed to register: ${response.body}');
     }
   }
 
@@ -139,61 +168,69 @@ class ApiService {
     }
   }
 
- Future<Map<String, dynamic>> getSnapToken({
-  required String token,
-  required int courseId,
-  required int hargaAwal,
-  String? voucher,
-  required String courseName,
-}) async {
-  try {
-    final orderId = 'ORDER-${DateTime.now().millisecondsSinceEpoch}';
-    
-    final response = await postData(
-      '$snapTokenBaseUrl/get-snap-token',
-      {
-        'transaction_details': {
-          'order_id': orderId,
-          'gross_amount': hargaAwal,
+  Future<Map<String, dynamic>> getSnapToken({
+    required String token,
+    required int hargaAwal,
+    required String courseName,
+    required String voucher,
+    required int courseId,
+  }) async {
+    final url = Uri.parse('$baseUrl/checkout/token');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
-        'item_details': [
-          {
-            'id': '$courseId',
-            'name': courseName,
-            'price': hargaAwal,
-            'quantity': 1,
-          },
-        ],
-        'customer_details': {
-          'email': 'user@example.com',
-        },
-      },
-      token: token,
-    );
+        body: jsonEncode({
+          'hargaAwal': hargaAwal,
+          'course_name': courseName,
+          'voucher': voucher,
+          'course_id': courseId,
+        }),
+      );
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('Failed to get snap token: ${response.body}');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data.containsKey('token') && data.containsKey('order_id')) {
+          return {
+            'token': data['token'],
+            'order_id': data['order_id'],
+          };
+        } else {
+          throw Exception('Response tidak mengandung token atau order_id');
+        }
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception('Gagal mengambil Snap Token: ${error['message'] ?? response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error saat mengambil Snap Token: $e');
     }
-  } catch (e) {
-    throw Exception('Error occurred while fetching snap token: $e');
   }
-}
 
-Future<Map<String, dynamic>> saveTransaction(String token, Map<String, dynamic> transactionData) async {
-  try {
-    final response = await postData('/checkout/save', transactionData, token: token);
 
-    if (response.statusCode == 200) {
-      return jsonDecode(response.body);
-    } else {
-      throw Exception('Failed to save transaction');
+  Future<Map<String, dynamic>> saveTransaction(String token, Map<String, dynamic> transactionData) async {
+    try {
+      if (!transactionData.containsKey('user_id')) {
+        transactionData['user_id'] = await getUserId();
+      }
+
+      final response = await postData('/checkout/save', transactionData, token: token);
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        print('Response error: ${response.body}');
+        throw Exception('Failed to save transaction');
+      }
+    } catch (e) {
+      throw Exception('Error occurred while saving transaction: $e');
     }
-  } catch (e) {
-    throw Exception('Error occurred while saving transaction: $e');
   }
-}
 
   Future<Map<String, dynamic>> updateProfile(String token, Map<String, dynamic> profileData) async {
     final response = await http.put(

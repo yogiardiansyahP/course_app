@@ -7,6 +7,7 @@ class RegisterPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final TextEditingController nameController = TextEditingController();
     final TextEditingController emailController = TextEditingController();
     final TextEditingController passwordController = TextEditingController();
     final TextEditingController confirmPasswordController = TextEditingController();
@@ -39,6 +40,16 @@ class RegisterPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Text('Name', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      hintText: 'Your Name',
+                      border: UnderlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
                   const Text('Email', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 8),
                   TextField(
@@ -55,25 +66,25 @@ class RegisterPage extends StatelessWidget {
                     controller: passwordController,
                     obscureText: true,
                     decoration: InputDecoration(
-                      hintText: 'Masukkan Password',
+                      hintText: 'Enter Password',
                       border: UnderlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('Konfirmasi Password', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text('Confirm Password', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 8),
                   TextField(
                     controller: confirmPasswordController,
                     obscureText: true,
                     decoration: InputDecoration(
-                      hintText: 'Masukkan Password',
+                      hintText: 'Confirm Password',
                       border: UnderlineInputBorder(),
                     ),
                   ),
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Text('Sudah memiliki akun?'),
+                      const Text('Already have an account?'),
                       TextButton(
                         onPressed: () {
                           Navigator.push(
@@ -95,25 +106,33 @@ class RegisterPage extends StatelessWidget {
                     child: ElevatedButton(
                       onPressed: () async {
                         if (passwordController.text == confirmPasswordController.text) {
-                          final auth = ApiService();
-                          final result = await auth.register(
-                            emailController.text,
-                            passwordController.text,
-                          );
-
-                          if (result['token'] != null) {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (context) => const LoginPage()),
+                          try {
+                            final auth = ApiService();
+                            final result = await auth.register(
+                              nameController.text,
+                              emailController.text,
+                              passwordController.text,
+                              confirmPasswordController.text,
                             );
-                          } else {
+
+                            if (result['success'] == true) {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (context) => const LoginPage()),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(result['message'] ?? 'Registration failed')),
+                              );
+                            }
+                          } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(result['message'] ?? 'Registrasi gagal')),
+                              const SnackBar(content: Text('Registration failed')),
                             );
                           }
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Password dan konfirmasi password tidak cocok')),
+                            const SnackBar(content: Text('Passwords do not match')),
                           );
                         }
                       },
@@ -124,7 +143,7 @@ class RegisterPage extends StatelessWidget {
                         ),
                       ),
                       child: const Text(
-                        'Daftar',
+                        'Register',
                         style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
                     ),

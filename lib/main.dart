@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:project_akhir_app/dashboard_user.dart';
-// import 'package:project_akhir_app/tentang_kami.dart';
+import 'package:project_akhir_app/kelas.dart';
+import 'package:project_akhir_app/materi.dart';
+import 'package:project_akhir_app/tentang_kami.dart';
 import 'package:project_akhir_app/profil.dart';
 import 'package:project_akhir_app/login.dart';
 import 'package:project_akhir_app/hubungi_kami.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:iamport_webview_flutter/iamport_webview_flutter.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  setWebViewPlatform();
   runApp(const MyApp());
+}
+
+void setWebViewPlatform() {
+  WebView.platform = SurfaceAndroidWebView();
 }
 
 class MyApp extends StatelessWidget {
@@ -23,9 +32,11 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginPage(),
         '/dashboard': (context) => const CourseListPage(),
         '/profil': (context) => ProfilScreen(),
-        // '/tentang': (context) => const TentangScreen(),
+        '/tentang': (context) => const TentangScreen(),
         '/hubungi': (context) => const HubungiKamiPage(),
-      },
+        '/kelas': (context) => const KelasPage(),
+        '/materi': (context) => const VideoLessonPage(),
+      }
     );
   }
 }
@@ -46,14 +57,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _checkIfLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');  // Fetch token from shared preferences
+    final token = prefs.getString('token');
 
     if (token != null) {
-      // If token exists, navigate to the dashboard
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/dashboard');
     } else {
-      // If no token, navigate to login screen
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/login');
     }

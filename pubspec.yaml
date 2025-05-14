@@ -20,6 +20,9 @@ dependencies:
   flutter_secure_storage: ^9.2.4
   shared_preferences: ^2.5.3
   midtrans_snap: ^1.0.1
+  webview_flutter_android: ^4.4.2
+  webview_flutter_platform_interface: ^2.11.0
+  iamport_webview_flutter: ^3.1.0
 
 flutter_test:
     sdk: flutter
