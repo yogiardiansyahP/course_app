@@ -81,22 +81,7 @@ class HubungiKamiPage extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: const [
-                CircleAvatar(
-                  backgroundColor: Color(0xFFE0E7FF),
-                  child: Icon(Icons.alternate_email, color: Colors.blue),
-                ),
-                CircleAvatar(
-                  backgroundColor: Color(0xFFE0E7FF),
-                  child: Icon(Icons.video_collection, color: Colors.blue),
-                ),
-                CircleAvatar(
-                  backgroundColor: Color(0xFFE0E7FF),
-                  child: Icon(Icons.camera_alt, color: Colors.blue),
-                ),
-                CircleAvatar(
-                  backgroundColor: Color(0xFFE0E7FF),
-                  child: Icon(Icons.facebook, color: Colors.blue),
-                ),
+                
               ],
             ),
             const SizedBox(height: 20),

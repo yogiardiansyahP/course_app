@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:project_akhir_app/services/api_service.dart';
 import 'package:project_akhir_app/profil.dart';
 import 'package:project_akhir_app/checkout.dart';
+import 'package:intl/intl.dart';
 
 class CodeinCourseApp extends StatelessWidget {
   final String token;
@@ -36,7 +37,6 @@ class _CourseHomePageState extends State<CourseHomePage> {
   @override
   void initState() {
     super.initState();
-    print("Token: ${widget.token}");
     _progressData = _fetchProgressData();
     _coursesFuture = _fetchCourses();
   }
@@ -76,14 +76,15 @@ class _CourseHomePageState extends State<CourseHomePage> {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => ProfilScreen()),
+                      MaterialPageRoute(builder: (context) => const ProfilScreen()),
                     );
                   },
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            const Text("Gabung Kelas Unggulan Codein Course", style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text("Gabung Kelas Unggulan Codein Course",
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
             FutureBuilder<List<dynamic>>(
               future: _coursesFuture,
@@ -99,7 +100,10 @@ class _CourseHomePageState extends State<CourseHomePage> {
                   return Column(
                     children: courses.map<Widget>((course) {
                       final String courseTitle = course['name'] ?? 'Course Tanpa Nama';
-                      final int originalPrice = course['price'] ?? 0;
+                      final dynamic priceData = course['price'];
+                      final int originalPrice = priceData is int
+                          ? priceData
+                          : int.tryParse(priceData.toString()) ?? 0;
                       final int discountedPrice = (originalPrice - 30000).clamp(0, originalPrice);
                       final String thumbnail = course['thumbnail'] ?? '';
                       final String mentor = course['mentor'] ?? 'Mentor Tidak Diketahui';
@@ -147,8 +151,14 @@ class _CourseHomePageState extends State<CourseHomePage> {
                                 showTitles: true,
                                 interval: 1,
                                 getTitlesWidget: (value, _) {
-                                  const months = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
-                                  return Text(months[value.toInt() % months.length]);
+                                  const months = [
+                                    'J', 'F', 'M', 'A', 'M', 'J',
+                                    'J', 'A', 'S', 'O', 'N', 'D'
+                                  ];
+                                  return Text(
+                                    months[value.toInt() % months.length],
+                                    style: const TextStyle(fontSize: 10),
+                                  );
                                 },
                               ),
                             ),
@@ -182,136 +192,127 @@ class _CourseHomePageState extends State<CourseHomePage> {
     );
   }
 
-Widget _courseCard(
-  BuildContext context,
-  String courseTitle,
-  int originalPrice,
-  int discountedPrice,
-  String thumbnail,
-  String mentor,
-  String token,
-) {
-  final Map<String, dynamic> checkoutData = {
-    'course_name': courseTitle,
-    'hargaAwal': originalPrice,
-    'hargaDiskon': discountedPrice,
-    'voucher': 'CODEINCOURSEIDNBGR',
-    'mentor': mentor,
-  };
+  Widget _courseCard(
+    BuildContext context,
+    String courseTitle,
+    int originalPrice,
+    int discountedPrice,
+    String thumbnail,
+    String mentor,
+    String token,
+  ) {
+    final Map<String, dynamic> checkoutData = {
+      'course_name': courseTitle,
+      'hargaAwal': originalPrice,
+      'hargaDiskon': discountedPrice,
+      'voucher': 'CODEINCOURSEIDNBGR',
+      'mentor': mentor,
+    };
 
-  final String imageUrl = 'http://127.0.0.1:8000/storage/$thumbnail';
-  print('🖼️ Attempting to load image from: $imageUrl');
+    final String imageUrl = 'https://codeinko.com/storage/$thumbnail';
 
-  return InkWell(
-    borderRadius: BorderRadius.circular(16),
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => CheckoutPage(
-            token: token,
-            checkoutData: checkoutData,
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CheckoutPage(
+              token: token,
+              checkoutData: checkoutData,
+            ),
           ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-      );
-    },
-    child: Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-            child: thumbnail.isNotEmpty
-                ? Image.network(
-                    imageUrl,
-                    height: 150,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
-                      if (loadingProgress == null) {
-                        print("✅ Image loaded successfully: $imageUrl");
-                        return child;
-                      } else {
-                        print("🔄 Loading image... ${loadingProgress.cumulativeBytesLoaded}/${loadingProgress.expectedTotalBytes}");
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: thumbnail.isNotEmpty
+                  ? Image.network(
+                      imageUrl,
+                      height: 150,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
                         return Center(
                           child: CircularProgressIndicator(
                             value: loadingProgress.expectedTotalBytes != null
-                                ? loadingProgress.cumulativeBytesLoaded / (loadingProgress.expectedTotalBytes ?? 1)
+                                ? loadingProgress.cumulativeBytesLoaded /
+                                    (loadingProgress.expectedTotalBytes ?? 1)
                                 : null,
                           ),
                         );
-                      }
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      print("❌ Failed to load image: $imageUrl");
-                      print("Error: $error");
-                      return Container(
-                        height: 150,
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.broken_image, size: 40),
-                      );
-                    },
-                  )
-                : Container(
-                    height: 150,
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.broken_image, size: 40),
-                  ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(courseTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 6),
-                Text(
-                  mentor,
-                  style: const TextStyle(fontSize: 13, color: Colors.grey),
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Text(
-                      "Rp. ${_formatRupiah(originalPrice)}",
-                      style: const TextStyle(
-                        color: Colors.red,
-                        decoration: TextDecoration.lineThrough,
-                        fontSize: 13,
-                      ),
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          height: 150,
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.broken_image, size: 40),
+                        );
+                      },
+                    )
+                  : Container(
+                      height: 150,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.broken_image, size: 40),
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Rp. ${_formatRupiah(discountedPrice)}",
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                    ),
-                  ],
-                ),
-              ],
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(courseTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 6),
+                  Text(
+                    mentor,
+                    style: const TextStyle(fontSize: 13, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Text(
+                        "Rp. ${_formatRupiah(originalPrice)}",
+                        style: const TextStyle(
+                          color: Colors.red,
+                          decoration: TextDecoration.lineThrough,
+                          fontSize: 13,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Rp. ${_formatRupiah(discountedPrice)}",
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
-
-  static String _formatRupiah(int amount) {
-    return amount.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]}.',
     );
+  }
+
+  String _formatRupiah(int value) {
+    final formatter = NumberFormat('#,##0', 'id_ID');
+    return formatter.format(value).replaceAll(',', '.');
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:project_akhir_app/tentang_kami.dart';
+import 'package:project_akhir_app/kelas.dart';
 import 'package:project_akhir_app/hubungi_kami.dart'; // Import the HubungiKamiPage
 import 'package:project_akhir_app/login.dart'; // Import the LoginPage
 
@@ -59,6 +60,17 @@ class ProfilScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => HubungiKamiPage()),
+              );
+            },
+          ),
+          Divider(height: 1),
+          ListTile(
+            title: Text("Course Saya"),
+            trailing: Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => KelasPage()),
               );
             },
           ),
