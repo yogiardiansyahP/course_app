@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  final String baseUrl = 'http://127.0.0.1:8000/api';
-   final String snapTokenBaseUrl = 'http://127.0.0.1:8000';
+  final String baseUrl = 'https://codeinko.com/api';
+   final String snapTokenBaseUrl = 'https://codeinko.com/';
 
   Future<http.Response> postData(String endpoint, Map<String, dynamic> body, {String? token, bool useSnapTokenBaseUrl = false}) {
     final String fullUrl = useSnapTokenBaseUrl 
@@ -22,26 +22,26 @@ class ApiService {
     );
   }
 
-  Future<List<double>> getChartProgress(String token) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/progress-chart'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-    
-    if (response.statusCode == 200) {
-      try {
-        List<dynamic> data = jsonDecode(response.body);
-        return data.map((e) => (e as num).toDouble()).toList();
-      } catch (e) {
-        throw Exception('Failed to decode progress data: $e');
-      }
-    } else {
-      throw Exception('Failed to load progress chart. Status: ${response.statusCode}');
+Future<List<double>> getChartProgress(String token) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/progress-chart'),
+    headers: {
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+  
+  if (response.statusCode == 200) {
+    try {
+      List<dynamic> data = jsonDecode(response.body);
+      return data.map((e) => double.tryParse(e.toString()) ?? 0.0).toList();
+    } catch (e) {
+      throw Exception('Failed to decode progress data: $e');
     }
+  } else {
+    throw Exception('Failed to load progress chart. Status: ${response.statusCode}');
   }
+}
 
   Future<List<dynamic>> getCoursesFromApi(String token) async {
     final response = await http.post(

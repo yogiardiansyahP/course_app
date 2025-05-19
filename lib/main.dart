@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:device_preview/device_preview.dart';
 import 'package:project_akhir_app/dashboard_user.dart';
 import 'package:project_akhir_app/kelas.dart';
 import 'package:project_akhir_app/materi.dart';
@@ -9,10 +10,17 @@ import 'package:project_akhir_app/hubungi_kami.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:iamport_webview_flutter/iamport_webview_flutter.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.clear();
   setWebViewPlatform();
-  runApp(const MyApp());
+  runApp(
+    DevicePreview(
+      enabled: true,
+      builder: (context) => const MyApp(),
+    ),
+  );
 }
 
 void setWebViewPlatform() {
@@ -25,6 +33,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      locale: DevicePreview.locale(context),
+      builder: DevicePreview.appBuilder,
       debugShowCheckedModeBanner: false,
       initialRoute: '/splash',
       routes: {
@@ -36,7 +46,7 @@ class MyApp extends StatelessWidget {
         '/hubungi': (context) => const HubungiKamiPage(),
         '/kelas': (context) => const KelasPage(),
         '/materi': (context) => const VideoLessonPage(),
-      }
+      },
     );
   }
 }
@@ -56,14 +66,14 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkIfLoggedIn() async {
+    await Future.delayed(const Duration(seconds: 2));
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
+    if (!mounted) return;
     if (token != null) {
-      if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/dashboard');
     } else {
-      if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/login');
     }
   }

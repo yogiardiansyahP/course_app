@@ -176,7 +176,7 @@ class _CourseListPageState extends State<CourseListPage> {
       'mentor': mentor,
     };
 
-    final String imageUrl = 'http://127.0.0.1:8000/storage/$thumbnail';
+    final String imageUrl = 'https://codeinko.com/storage/$thumbnail';
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
