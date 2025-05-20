@@ -123,7 +123,21 @@ class CourseListPage extends StatelessWidget {
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const VideoLessonPage()),
+                      MaterialPageRoute(
+                        builder: (context) => VideoLessonPage(
+                          courseName: 'JavaScript Dasar',
+                          title: 'Pengenalan JavaScript',
+                          description: 'Materi dasar untuk memahami konsep awal JavaScript.',
+                          videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                          hasAccess: true, // atur sesuai logika status pembayaran
+                          hasPrev: false,
+                          hasNext: true,
+                          onNext: () {
+                            // Tambahkan logika untuk lanjut ke video berikutnya
+                          },
+                          onPrev: null,
+                        ),
+                      ),
                     );
                   },
                   style: ElevatedButton.styleFrom(

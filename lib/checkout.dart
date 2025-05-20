@@ -33,12 +33,19 @@ class _CheckoutPageState extends State<CheckoutPage> {
   bool _showMidtransWebView = false;
   String? _snapUrl;
 
-  final WebViewController _controller = WebViewController()
-    ..setJavaScriptMode(JavaScriptMode.unrestricted);
+  late final WebViewController _controller;
 
   @override
   void initState() {
     super.initState();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(
+        NavigationDelegate(
+          onNavigationRequest: _handleNavigation,
+        ),
+      );
+
     _loadCourseData();
   }
 
@@ -52,18 +59,33 @@ class _CheckoutPageState extends State<CheckoutPage> {
         final String imageUrl = 'https://codeinko.com/storage/$thumbnail';
 
         setState(() {
-          courseName = course['name'];
+          courseName = course['name'] ?? '';
           hargaAwal = int.parse(course['price'].toString());
           voucher = '';
           hargaDiskon = hargaAwal;
           courseThumbnail = imageUrl;
-          courseMentor = course['mentor'];
+          courseMentor = course['mentor'] ?? '';
           courseId = course['id'];
           _loading = false;
+        });
+      } else {
+        // Handle case no courses found
+        setState(() {
+          _loading = false;
+          courseName = '-';
+          hargaAwal = 0;
+          hargaDiskon = 0;
+          voucher = '';
+          courseThumbnail = '';
+          courseMentor = '-';
+          courseId = 0;
         });
       }
     } catch (e) {
       print('Error loading course data: $e');
+      setState(() {
+        _loading = false;
+      });
     }
   }
 
@@ -94,15 +116,28 @@ class _CheckoutPageState extends State<CheckoutPage> {
 
       print('Snap URL: $_snapUrl');
 
-      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-        _controller.loadRequest(Uri.parse(_snapUrl!));
+      if (kIsWeb) {
+        // Di Web langsung buka url eksternal
+        final uri = Uri.parse(_snapUrl!);
+        if (await canLaunchUrl(uri)) {
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          setState(() => _showMidtransWebView = false);
+          Navigator.pushNamedAndRemoveUntil(context, '/kelas', (route) => false);
+        }
+      } else {
+        // Android/iOS pakai WebView
+        if (Platform.isAndroid || Platform.isIOS) {
+          _controller.loadRequest(Uri.parse(_snapUrl!));
+          setState(() {
+            _showMidtransWebView = true;
+          });
+        }
       }
-
-      setState(() {
-        _showMidtransWebView = true;
-      });
     } catch (e) {
       print('Gagal melakukan pembayaran: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal melakukan pembayaran: $e')),
+      );
     }
   }
 
@@ -110,6 +145,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     final url = request.url;
     print('Navigating to: $url');
 
+    // Cek jika URL sudah mengindikasikan selesai bayar
     if (url.contains('finish') || url.contains('pending') || url.contains('error')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Pembayaran selesai')),
@@ -133,18 +169,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
 
     if (_showMidtransWebView && _snapUrl != null) {
-      if (kIsWeb) {
-        Future.microtask(() async {
-          final uri = Uri.parse(_snapUrl!);
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-            setState(() => _showMidtransWebView = false);
-            Navigator.pushNamedAndRemoveUntil(context, '/kelas', (route) => false);
-          }
-        });
-
-        return const Scaffold(body: Center(child: CircularProgressIndicator()));
-      } else if (Platform.isAndroid || Platform.isIOS) {
+      // HANYA tampilkan WebView jika bukan web
+      if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Pembayaran'),
@@ -157,13 +183,11 @@ class _CheckoutPageState extends State<CheckoutPage> {
               },
             ),
           ),
-          body: WebViewWidget(
-            controller: _controller..setNavigationDelegate(
-              NavigationDelegate(onNavigationRequest: _handleNavigation),
-            ),
-          ),
+          body: WebViewWidget(controller: _controller),
         );
       }
+      // Jika web tapi _showMidtransWebView true, tampilkan loading saja
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -187,7 +211,9 @@ class _CheckoutPageState extends State<CheckoutPage> {
         Align(
           alignment: Alignment.centerLeft,
           child: ElevatedButton(
-            onPressed: () {},
+            onPressed: () {
+              Navigator.pushNamedAndRemoveUntil(context, '/kelas', (route) => false);
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF3B82F6),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -200,20 +226,27 @@ class _CheckoutPageState extends State<CheckoutPage> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                courseThumbnail,
-                width: 100,
-                height: 70,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    width: 100,
-                    height: 70,
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.broken_image, size: 40),
-                  );
-                },
-              ),
+              child: courseThumbnail.isNotEmpty
+                  ? Image.network(
+                      courseThumbnail,
+                      width: 100,
+                      height: 70,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 100,
+                          height: 70,
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.broken_image, size: 40),
+                        );
+                      },
+                    )
+                  : Container(
+                      width: 100,
+                      height: 70,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.broken_image, size: 40),
+                    ),
             ),
             const SizedBox(width: 12),
             Column(
@@ -221,8 +254,13 @@ class _CheckoutPageState extends State<CheckoutPage> {
               children: [
                 Text(courseName, style: const TextStyle(fontWeight: FontWeight.bold)),
                 if (hargaDiskon < hargaAwal)
-                  Text('Rp. $hargaAwal',
-                      style: const TextStyle(decoration: TextDecoration.lineThrough, color: Colors.red)),
+                  Text(
+                    'Rp. $hargaAwal',
+                    style: const TextStyle(
+                      decoration: TextDecoration.lineThrough,
+                      color: Colors.red,
+                    ),
+                  ),
                 Text('Rp. $hargaDiskon'),
               ],
             ),
@@ -301,6 +339,4 @@ class _CheckoutPageState extends State<CheckoutPage> {
       ),
     );
   }
-  
-  IamportWebView({required String initialUrl, required JavascriptMode javascriptMode, required NavigationDecision Function(dynamic request) navigationDelegate}) {}
 }

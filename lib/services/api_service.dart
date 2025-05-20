@@ -123,12 +123,20 @@ Future<List<double>> getChartProgress(String token) async {
     }
   }
 
-  Future<Map<String, dynamic>> logout(String token) async {
-    final response = await postData('/logout', {}, token: token);
+  Future<bool> logout(String token) async {
+    final url = Uri.parse('https://codeinko.com/api/logout');
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return true;
     } else {
-      throw Exception('Failed to logout');
+      throw Exception('Logout failed with status: ${response.statusCode}');
     }
   }
 
