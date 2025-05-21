@@ -10,11 +10,8 @@ import 'package:project_akhir_app/hubungi_kami.dart';
 import 'package:project_akhir_app/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:iamport_webview_flutter/iamport_webview_flutter.dart';
-<<<<<<< HEAD
-=======
 import 'package:uni_links/uni_links.dart';
 import 'package:flutter/services.dart';
->>>>>>> 1ead78e (perubahan drastis)
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,8 +65,6 @@ class _TokenLoaderPageState extends State<TokenLoaderPage> {
   void initState() {
     super.initState();
     _loadTokenAndNavigate();
-<<<<<<< HEAD
-=======
     _initDeepLinks();
   }
 
@@ -94,7 +89,6 @@ class _TokenLoaderPageState extends State<TokenLoaderPage> {
     if (uri.host == 'list-kelas' && mounted) {
       Navigator.pushNamed(context, '/list-kelas');
     }
->>>>>>> 1ead78e (perubahan drastis)
   }
 
   Future<void> _loadTokenAndNavigate() async {
@@ -175,8 +169,4 @@ class _SplashScreenState extends State<SplashScreen> {
       ),
     );
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 1ead78e (perubahan drastis)
