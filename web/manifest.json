@@ -1,6 +1,11 @@
 {
+<<<<<<< HEAD
     "name": "project_akhir_app",
     "short_name": "project_akhir_app",
+=======
+    "name": "course_app",
+    "short_name": "course_app",
+>>>>>>> 1ead78e (perubahan drastis)
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
