@@ -15,7 +15,7 @@ class CourseListPage extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            Navigator.pop(context); // kembali ke halaman sebelumnya
+            Navigator.pop(context);
           },
         ),
       ),
@@ -43,7 +43,7 @@ class CourseListPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // Chips dalam Row
+              // Chips
               Row(
                 children: [
                   InkWell(
@@ -73,7 +73,7 @@ class CourseListPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // List of Courses
+              // Course Cards
               _buildCourseCard(context),
               const SizedBox(height: 16),
               _buildCourseCard(context),
@@ -91,7 +91,6 @@ class CourseListPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Gambar
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             child: Image.asset(
@@ -129,12 +128,10 @@ class CourseListPage extends StatelessWidget {
                           title: 'Pengenalan JavaScript',
                           description: 'Materi dasar untuk memahami konsep awal JavaScript.',
                           videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                          hasAccess: true, // atur sesuai logika status pembayaran
+                          hasAccess: true,
                           hasPrev: false,
                           hasNext: true,
-                          onNext: () {
-                            // Tambahkan logika untuk lanjut ke video berikutnya
-                          },
+                          onNext: () {},
                           onPrev: null,
                         ),
                       ),

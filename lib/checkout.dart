@@ -173,16 +173,27 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Pembayaran'),
-            leading: IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () {
-                setState(() {
-                  _showMidtransWebView = false;
-                });
-              },
-            ),
+          title: const Text('Pembayaran'),
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () {
+              setState(() {
+                _showMidtransWebView = false;
+              });
+            },
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                if (_snapUrl != null) {
+                  _controller.loadRequest(Uri.parse(_snapUrl!));
+                }
+              },
+              tooltip: 'Reload',
+            ),
+          ],
+        ),
           body: WebViewWidget(controller: _controller),
         );
       }

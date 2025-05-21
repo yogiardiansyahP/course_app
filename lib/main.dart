@@ -10,8 +10,6 @@ import 'package:project_akhir_app/hubungi_kami.dart';
 import 'package:project_akhir_app/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:iamport_webview_flutter/iamport_webview_flutter.dart';
-import 'package:uni_links/uni_links.dart';
-import 'package:flutter/services.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -65,30 +63,7 @@ class _TokenLoaderPageState extends State<TokenLoaderPage> {
   void initState() {
     super.initState();
     _loadTokenAndNavigate();
-    _initDeepLinks();
-  }
-
-  Future<void> _initDeepLinks() async {
-    try {
-      final initialUri = await getInitialUri();
-      if (initialUri != null) {
-        _handleDeepLink(initialUri);
-      }
-
-      uriLinkStream.listen((Uri? uri) {
-        if (uri != null) {
-          _handleDeepLink(uri);
-        }
-      });
-    } on PlatformException catch (e) {
-      print("Deep Link Error: $e");
-    }
-  }
-
-  void _handleDeepLink(Uri uri) {
-    if (uri.host == 'list-kelas' && mounted) {
-      Navigator.pushNamed(context, '/list-kelas');
-    }
+    // Hapus _initDeepLinks() dan semua kode deep link
   }
 
   Future<void> _loadTokenAndNavigate() async {
