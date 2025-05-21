@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  final String baseUrl = 'http://127.0.0.1:8000/api';
-   final String snapTokenBaseUrl = 'http://127.0.0.1:8000';
+  final String baseUrl = 'https://codeinko.com/api';
+   final String snapTokenBaseUrl = 'https://codeinko.com/';
 
   Future<http.Response> postData(String endpoint, Map<String, dynamic> body, {String? token, bool useSnapTokenBaseUrl = false}) {
     final String fullUrl = useSnapTokenBaseUrl 
@@ -22,60 +22,63 @@ class ApiService {
     );
   }
 
-  Future<List<double>> getChartProgress(String token) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/progress-chart'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    );
-    
-    if (response.statusCode == 200) {
-      try {
-        List<dynamic> data = jsonDecode(response.body);
-        return data.map((e) => (e as num).toDouble()).toList();
-      } catch (e) {
-        throw Exception('Failed to decode progress data: $e');
-      }
-    } else {
-      throw Exception('Failed to load progress chart. Status: ${response.statusCode}');
+Future<List<double>> getChartProgress(String token) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/progress-chart'),
+    headers: {
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+  
+  if (response.statusCode == 200) {
+    try {
+      List<dynamic> data = jsonDecode(response.body);
+      return data.map((e) => double.tryParse(e.toString()) ?? 0.0).toList();
+    } catch (e) {
+      throw Exception('Failed to decode progress data: $e');
     }
+  } else {
+    throw Exception('Failed to load progress chart. Status: ${response.statusCode}');
   }
-
-  Future<List<dynamic>> getCoursesFromApi(String token) async {
+}
+Future<List<Map<String, dynamic>>> getCoursesFromApi(String token) async {
     final response = await http.post(
       Uri.parse('$baseUrl/api-datacourse'),
       headers: {
         'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
       },
     );
 
     if (response.statusCode == 200) {
       try {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        if (responseData['success'] == true) {
-          List<dynamic> courses = responseData['data'];
-          return courses.map((course) {
-            return {
+        if (responseData['success'] == true && responseData['data'] is List) {
+          return List<Map<String, dynamic>>.from(
+            responseData['data'].map((course) => {
               'id': course['id'],
               'name': course['name'],
               'thumbnail': course['thumbnail'],
               'mentor': course['mentor'],
               'price': course['price'],
               'materials': course['materials'] ?? [],
-            };
-          }).toList();
+              'first_video_title': course['first_video_title'] ?? '',
+              'first_video_description': course['first_video_description'] ?? '',
+              'first_video_url': course['first_video_url'] ?? '',
+            }),
+          );
         } else {
-          throw Exception('Failed to load courses');
+          throw Exception('Format data tidak sesuai.');
         }
       } catch (e) {
-        throw Exception('Failed to decode courses data: $e');
+        throw Exception('Gagal decode data courses: $e');
       }
     } else {
-      throw Exception('Failed to load courses. Status: ${response.statusCode}');
+      throw Exception('Gagal memuat courses. Status: ${response.statusCode}');
     }
   }
+
 
     Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await postData('/login', {'email': email, 'password': password});
@@ -123,12 +126,20 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> logout(String token) async {
-    final response = await postData('/logout', {}, token: token);
+  Future<bool> logout(String token) async {
+    final url = Uri.parse('https://codeinko.com/api/logout');
+    final response = await http.get(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      return true;
     } else {
-      throw Exception('Failed to logout');
+      throw Exception('Logout failed with status: ${response.statusCode}');
     }
   }
 
@@ -315,4 +326,8 @@ class ApiService {
       throw Exception('Failed to delete transaction');
     }
   }
+
+
+
+
 }

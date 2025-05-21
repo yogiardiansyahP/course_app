@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:project_akhir_app/login.dart';
+import 'package:project_akhir_app/materi.dart';
 import 'package:project_akhir_app/services/api_service.dart';
-import 'package:project_akhir_app/checkout.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CourseListPage extends StatefulWidget {
@@ -72,36 +72,33 @@ class _CourseListPageState extends State<CourseListPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Image.asset('asset/image/logo.png', width: 32),
-                  if (_isLoggedIn)
-                    IconButton(
-                      icon: const Icon(Icons.logout),
-                      onPressed: () async {
-                        final prefs = await SharedPreferences.getInstance();
-                        final token = prefs.getString('token');
-                        if (token != null) {
-                          await ApiService().logout(token);
+                  IconButton(
+                    icon: const Icon(Icons.logout),
+                    onPressed: () async {
+                      final prefs = await SharedPreferences.getInstance();
+                      final token = prefs.getString('token');
+                      if (token != null) {
+                        try {
+                          bool success = await ApiService().logout(token);
+                          if (success) {
+                            await prefs.clear();
+                            setState(() {
+                              _isLoggedIn = false;
+                              _token = null;
+                            });
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => const LoginPage()),
+                            );
+                          }
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Logout gagal: $e')),
+                          );
                         }
-                        await prefs.clear();
-                        setState(() {
-                          _isLoggedIn = false;
-                          _token = null;
-                        });
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const LoginPage()),
-                        );
-                      },
-                    )
-                  else
-                    IconButton(
-                      icon: const Icon(Icons.login),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const LoginPage()),
-                        );
-                      },
-                    ),
+                      }
+                    },
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -130,7 +127,7 @@ class _CourseListPageState extends State<CourseListPage> {
                     } else if (snapshot.hasError) {
                       return Center(child: Text('Error: ${snapshot.error}'));
                     } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                      return const Text("Tidak ada course tersedia");
+                      return const Center(child: Text("Tidak ada course tersedia"));
                     } else {
                       final courses = snapshot.data!;
                       return ListView.builder(
@@ -139,12 +136,11 @@ class _CourseListPageState extends State<CourseListPage> {
                           final course = courses[index];
                           return _courseCard(
                             context,
-                            course['name'],
-                            course['price'],
-                            course['price'] - 30000,
-                            course['thumbnail'],
-                            course['mentor'],
+                            course['name'] ?? 'Unknown Course',
+                            course['thumbnail'] ?? '',
+                            course['mentor'] ?? 'Unknown Mentor',
                             _token!,
+                            course, // passing whole course data for VideoLessonPage
                           );
                         },
                       );
@@ -162,21 +158,12 @@ class _CourseListPageState extends State<CourseListPage> {
   Widget _courseCard(
     BuildContext context,
     String courseTitle,
-    int originalPrice,
-    int discountedPrice,
     String thumbnail,
     String mentor,
     String token,
+    Map<String, dynamic> courseData,
   ) {
-    final Map<String, dynamic> checkoutData = {
-      'course_name': courseTitle,
-      'hargaAwal': originalPrice,
-      'hargaDiskon': discountedPrice,
-      'voucher': 'CODEINCOURSEIDNBGR',
-      'mentor': mentor,
-    };
-
-    final String imageUrl = 'http://127.0.0.1:8000/storage/$thumbnail';
+    final String imageUrl = 'https://codeinko.com/storage/$thumbnail';
 
     return InkWell(
       borderRadius: BorderRadius.circular(16),
@@ -184,9 +171,16 @@ class _CourseListPageState extends State<CourseListPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => CheckoutPage(
-              token: token,
-              checkoutData: checkoutData,
+            builder: (context) => VideoLessonPage(
+              courseName: courseTitle,
+              title: courseData['current_lesson_title'] ?? 'Judul Video',
+              description: courseData['current_lesson_description'] ?? '',
+              videoUrl: courseData['current_lesson_video_url'] ?? '',
+              hasAccess: courseData['has_access'] ?? false,
+              hasPrev: false,  // sesuaikan kalau ada navigasi prev
+              hasNext: false,  // sesuaikan kalau ada navigasi next
+              onPrev: null,    // fungsi navigasi prev kalau ada
+              onNext: null,    // fungsi navigasi next kalau ada
             ),
           ),
         );
@@ -217,7 +211,7 @@ class _CourseListPageState extends State<CourseListPage> {
                       fit: BoxFit.cover,
                       loadingBuilder: (context, child, progress) {
                         if (progress == null) return child;
-                        return Center(child: CircularProgressIndicator());
+                        return const Center(child: CircularProgressIndicator());
                       },
                       errorBuilder: (context, error, stackTrace) {
                         return Container(
@@ -238,44 +232,19 @@ class _CourseListPageState extends State<CourseListPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(courseTitle, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text(courseTitle,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, fontSize: 16)),
                   const SizedBox(height: 6),
-                  Text(mentor, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Text(
-                        "Rp. ${_formatRupiah(originalPrice)}",
-                        style: const TextStyle(
-                          color: Colors.red,
-                          decoration: TextDecoration.lineThrough,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Rp. ${_formatRupiah(discountedPrice)}",
-                        style: const TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
+                  Text(mentor,
+                      style:
+                          const TextStyle(fontSize: 13, color: Colors.grey)),
                 ],
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-
-  static String _formatRupiah(int amount) {
-    return amount.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (m) => '${m[1]}.',
     );
   }
 }
