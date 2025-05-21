@@ -45,7 +45,7 @@ class _CourseListPageState extends State<CourseListPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            Navigator.pop(context); // kembali ke halaman sebelumnya
+            Navigator.pop(context);
           },
         ),
       ),
@@ -73,7 +73,7 @@ class _CourseListPageState extends State<CourseListPage> {
               ),
               const SizedBox(height: 20),
 
-              // Chips dalam Row
+              // Chips
               Row(
                 children: [
                   InkWell(
@@ -148,7 +148,6 @@ class _CourseListPageState extends State<CourseListPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Gambar
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             child: Image.network(

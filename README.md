@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # project_akhir_app
+=======
+# course_app
+>>>>>>> 1ead78e (perubahan drastis)
 
 A new Flutter project.
 
