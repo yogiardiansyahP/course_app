@@ -90,21 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.example" "\0"
-<<<<<<< HEAD
-            VALUE "FileDescription", "project_akhir_app" "\0"
-            VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "project_akhir_app" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
-            VALUE "OriginalFilename", "project_akhir_app.exe" "\0"
-            VALUE "ProductName", "project_akhir_app" "\0"
-=======
             VALUE "FileDescription", "course_app" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "course_app" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 com.example. All rights reserved." "\0"
             VALUE "OriginalFilename", "course_app.exe" "\0"
             VALUE "ProductName", "course_app" "\0"
->>>>>>> 1ead78e (perubahan drastis)
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END
