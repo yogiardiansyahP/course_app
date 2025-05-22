@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:project_akhir_app/dashboard_user.dart';
-import 'package:project_akhir_app/kelas.dart';
 import 'package:project_akhir_app/materi.dart';
 import 'package:project_akhir_app/tentang_kami.dart';
 import 'package:project_akhir_app/profil.dart';
@@ -35,10 +34,10 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginPage(),
         '/dashboard': (context) => const CourseListPage(),
         '/list-kelas': (context) => const TokenLoaderPage(),
+        '/materi-kembali': (context) => const CourseListPage(),
         '/profil': (context) => ProfilScreen(),
         '/tentang': (context) => const TentangScreen(),
         '/hubungi': (context) => const HubungiKamiPage(),
-        '/kelas': (context) => const KelasPage(),
         '/materi': (context) => const VideoLessonPage(
               courseName: '',
               title: '',

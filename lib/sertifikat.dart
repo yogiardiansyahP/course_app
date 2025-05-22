@@ -99,11 +99,11 @@ class _CertificatePageState extends State<CertificatePage> {
                                   ),
                                 );
                               },
-                              child: const Text('Lihat Sertifikat'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.blue,
                                 minimumSize: const Size(double.infinity, 50),
                               ),
+                              child: const Text('Lihat Sertifikat'),
                             ),
                           ],
                         ),

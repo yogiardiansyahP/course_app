@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:project_akhir_app/materi.dart';
 import 'package:project_akhir_app/kelas.dart';
 import 'package:project_akhir_app/services/api_service.dart';
+import 'package:project_akhir_app/profil.dart'; // pastikan import ProfilScreen
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CourseListPage extends StatefulWidget {
@@ -31,7 +32,7 @@ class _CourseListPageState extends State<CourseListPage> {
 
     final apiService = ApiService();
     setState(() {
-      futurePurchasedCourses = apiService.getCoursesFromApi(token!);
+      futurePurchasedCourses = apiService.getCoursesFromApi(token!) as Future<List<Map<String, dynamic>>>?;
     });
   }
 
@@ -45,7 +46,10 @@ class _CourseListPageState extends State<CourseListPage> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () {
-            Navigator.pop(context);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => ProfilScreen()),
+            );
           },
         ),
       ),
@@ -55,7 +59,6 @@ class _CourseListPageState extends State<CourseListPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Logo
               Center(
                 child: Image.asset(
                   'assets/logo.png',
@@ -72,15 +75,13 @@ class _CourseListPageState extends State<CourseListPage> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // Chips
               Row(
                 children: [
                   InkWell(
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) =>  KelasPage()),
+                        MaterialPageRoute(builder: (context) => KelasPage(token: token!)),
                       );
                     },
                     child: Chip(
@@ -94,10 +95,9 @@ class _CourseListPageState extends State<CourseListPage> {
                   const SizedBox(width: 8),
                   InkWell(
                     onTap: () {
-                      // Arahkan ke halaman CourseListPage
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) =>  CourseListPage()),
+                        MaterialPageRoute(builder: (context) => const CourseListPage()),
                       );
                     },
                     child: Chip(
@@ -111,8 +111,6 @@ class _CourseListPageState extends State<CourseListPage> {
                 ],
               ),
               const SizedBox(height: 20),
-
-              // List of Courses
               FutureBuilder<List<Map<String, dynamic>>>(
                 future: futurePurchasedCourses,
                 builder: (context, snapshot) {
@@ -126,6 +124,8 @@ class _CourseListPageState extends State<CourseListPage> {
 
                   final courses = snapshot.data!;
                   return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
                     itemCount: courses.length,
                     itemBuilder: (context, index) {
                       final course = courses[index];
@@ -145,6 +145,7 @@ class _CourseListPageState extends State<CourseListPage> {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: const EdgeInsets.only(bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -185,12 +186,10 @@ class _CourseListPageState extends State<CourseListPage> {
                           title: course['first_video_title'] ?? '',
                           description: course['first_video_description'] ?? '',
                           videoUrl: course['first_video_url'] ?? '',
-                          hasAccess: true, // atur sesuai logika status pembayaran
+                          hasAccess: true,
                           hasPrev: false,
                           hasNext: true,
-                          onNext: () {
-                            // Tambahkan logika untuk lanjut ke video berikutnya
-                          },
+                          onNext: () {},
                           onPrev: null,
                         ),
                       ),

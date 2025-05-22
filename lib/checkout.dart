@@ -69,7 +69,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
           _loading = false;
         });
       } else {
-        // Handle case no courses found
         setState(() {
           _loading = false;
           courseName = '-';
@@ -117,7 +116,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
       print('Snap URL: $_snapUrl');
 
       if (kIsWeb) {
-        // Di Web langsung buka url eksternal
         final uri = Uri.parse(_snapUrl!);
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -125,9 +123,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
           Navigator.pushNamedAndRemoveUntil(context, '/kelas', (route) => false);
         }
       } else {
-        // Android/iOS pakai WebView
         if (Platform.isAndroid || Platform.isIOS) {
-          _controller.loadRequest(Uri.parse(_snapUrl!));
+          _controller.loadRequest(Uri.parse(_snapUrl!)).then((_) {
+            print('WebView loaded successfully');
+          }).catchError((error) {
+            print('Error loading WebView: $error');
+          });
           setState(() {
             _showMidtransWebView = true;
           });
@@ -141,38 +142,75 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
-NavigationDecision _handleNavigation(NavigationRequest request) {
-  final url = request.url;
-  final uri = Uri.parse(url);
+  bool _hasNavigatedToSuccess = false;
 
-  // Tampilkan URL tanpa query di log
-  final urlWithoutQuery = '${uri.scheme}://${uri.host}${uri.path}';
-  print('Navigating to: $urlWithoutQuery');
-
-  final isSuccessPage = uri.host == 'codeinko.com' &&
-                        uri.path == '/payment/success' &&
-                        uri.queryParameters['transaction_status'] == 'settlement';
-
-  if (isSuccessPage) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Pembayaran berhasil')),
-    );
-    setState(() {
-      _showMidtransWebView = false;
-    });
-
-      Future.delayed(const Duration(milliseconds: 300), () {
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/dashboard',
-        (route) => false,
-      );
-    });
-    return NavigationDecision.prevent;
+  bool isSuccessNavigation(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final orderId = uri.queryParameters['order_id'] ?? '';
+      return uri.path == '/payment/success' &&
+          uri.queryParameters['transaction_status'] == 'settlement' &&
+          orderId.startsWith('ORDER-');
+    } catch (e) {
+      return false;
+    }
   }
 
-  return NavigationDecision.navigate;
-}
+  NavigationDecision _handleNavigation(NavigationRequest request) {
+    final url = request.url;
+    print('Navigating to: $url');
+
+    if (isSuccessNavigation(url) && !_hasNavigatedToSuccess) {
+      _hasNavigatedToSuccess = true; // tandai sudah navigasi
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Pembayaran berhasil')),
+      );
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Pembayaran Berhasil'),
+            content: const Text('Anda telah berhasil melakukan pembayaran. Apakah Anda ingin menuju ke halaman Pelajaran?'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Tidak'),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+              ),
+              TextButton(
+                child: const Text('Ya'),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                  Navigator.pushReplacementNamed(context, '/kelas'); // Navigate to CourseListPage
+                },
+              ),
+            ],
+          );
+        },
+      );
+
+      return NavigationDecision.prevent;
+    }
+
+    return NavigationDecision.navigate;
+  }
+
+  Future<void> _reloadWebView() async {
+    if (_snapUrl != null) {
+      final currentUrl = await _controller.currentUrl();
+      print('Current URL: $currentUrl');
+
+      if (isSuccessNavigation(currentUrl!)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pembayaran telah berhasil')),
+        );
+      } else {
+        _controller.reload();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -183,7 +221,6 @@ NavigationDecision _handleNavigation(NavigationRequest request) {
     }
 
     if (_showMidtransWebView && _snapUrl != null) {
-      // HANYA tampilkan WebView jika bukan web
       if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
         return Scaffold(
           appBar: AppBar(
@@ -196,17 +233,22 @@ NavigationDecision _handleNavigation(NavigationRequest request) {
                 });
               },
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: _reloadWebView,
+              ),
+            ],
           ),
           body: WebViewWidget(controller: _controller),
         );
       }
-      // Jika web tapi _showMidtransWebView true, tampilkan loading saja
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pembayaran'),
+        title: const Text('Pembayaran - CodeIn'),
         leading: const BackButton(color: Colors.black),
         backgroundColor: Colors.white,
         elevation: 1,
@@ -247,6 +289,7 @@ NavigationDecision _handleNavigation(NavigationRequest request) {
                       height: 70,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
+                        print('Error loading image: $error');
                         return Container(
                           width: 100,
                           height: 70,
@@ -305,50 +348,50 @@ NavigationDecision _handleNavigation(NavigationRequest request) {
               icon: const Icon(Icons.check),
               onPressed: _applyVoucher,
             ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
-          height: 50,
           child: ElevatedButton(
             onPressed: _handlePayment,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF60A5FA),
+              backgroundColor: const Color(0xFF3B82F6),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Bayar Sekarang', style: TextStyle(color: Colors.white, fontSize: 16)),
+            child: const Text('Beli Sekarang', style: TextStyle(color: Colors.white)),
           ),
         ),
       ],
     );
   }
 
-  static Widget _paymentMethodTile(IconData icon, String label) {
+  Widget _paymentMethodTile(IconData icon, String method) {
     return Container(
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(12),
+        color: Colors.grey.shade200,
       ),
+      padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Icon(icon, size: 30),
-          const SizedBox(width: 12),
-          Text(label, style: const TextStyle(fontSize: 16)),
+          Icon(icon, size: 28),
+          const SizedBox(width: 16),
+          Text(method, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 
-  static Widget _detailRow(String label, String value) {
+  Widget _detailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 14)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(label),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );
