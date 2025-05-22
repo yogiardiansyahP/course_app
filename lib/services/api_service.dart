@@ -42,40 +42,43 @@ Future<List<double>> getChartProgress(String token) async {
     throw Exception('Failed to load progress chart. Status: ${response.statusCode}');
   }
 }
-
-  Future<List<dynamic>> getCoursesFromApi(String token) async {
+Future<List<Map<String, dynamic>>> getCoursesFromApi(String token) async {
     final response = await http.post(
       Uri.parse('$baseUrl/api-datacourse'),
       headers: {
         'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
       },
     );
 
     if (response.statusCode == 200) {
       try {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
-        if (responseData['success'] == true) {
-          List<dynamic> courses = responseData['data'];
-          return courses.map((course) {
-            return {
+        if (responseData['success'] == true && responseData['data'] is List) {
+          return List<Map<String, dynamic>>.from(
+            responseData['data'].map((course) => {
               'id': course['id'],
               'name': course['name'],
               'thumbnail': course['thumbnail'],
               'mentor': course['mentor'],
               'price': course['price'],
               'materials': course['materials'] ?? [],
-            };
-          }).toList();
+              'first_video_title': course['first_video_title'] ?? '',
+              'first_video_description': course['first_video_description'] ?? '',
+              'first_video_url': course['first_video_url'] ?? '',
+            }),
+          );
         } else {
-          throw Exception('Failed to load courses');
+          throw Exception('Format data tidak sesuai.');
         }
       } catch (e) {
-        throw Exception('Failed to decode courses data: $e');
+        throw Exception('Gagal decode data courses: $e');
       }
     } else {
-      throw Exception('Failed to load courses. Status: ${response.statusCode}');
+      throw Exception('Gagal memuat courses. Status: ${response.statusCode}');
     }
   }
+
 
     Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await postData('/login', {'email': email, 'password': password});
@@ -323,4 +326,8 @@ Future<List<double>> getChartProgress(String token) async {
       throw Exception('Failed to delete transaction');
     }
   }
+
+
+
+
 }

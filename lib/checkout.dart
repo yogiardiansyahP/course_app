@@ -141,24 +141,38 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
-  NavigationDecision _handleNavigation(NavigationRequest request) {
-    final url = request.url;
-    print('Navigating to: $url');
+NavigationDecision _handleNavigation(NavigationRequest request) {
+  final url = request.url;
+  final uri = Uri.parse(url);
 
-    // Cek jika URL sudah mengindikasikan selesai bayar
-    if (url.contains('finish') || url.contains('pending') || url.contains('error')) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pembayaran selesai')),
+  // Tampilkan URL tanpa query di log
+  final urlWithoutQuery = '${uri.scheme}://${uri.host}${uri.path}';
+  print('Navigating to: $urlWithoutQuery');
+
+  final isSuccessPage = uri.host == 'codeinko.com' &&
+                        uri.path == '/payment/success' &&
+                        uri.queryParameters['transaction_status'] == 'settlement';
+
+  if (isSuccessPage) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Pembayaran berhasil')),
+    );
+    setState(() {
+      _showMidtransWebView = false;
+    });
+
+      Future.delayed(const Duration(milliseconds: 300), () {
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/dashboard',
+        (route) => false,
       );
-      setState(() {
-        _showMidtransWebView = false;
-      });
-      Navigator.pushNamedAndRemoveUntil(context, '/kelas', (route) => false);
-      return NavigationDecision.prevent;
-    }
-
-    return NavigationDecision.navigate;
+    });
+    return NavigationDecision.prevent;
   }
+
+  return NavigationDecision.navigate;
+}
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +187,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
       if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Pembayaran'),
+            title: const Text('CodeIn'),
             leading: IconButton(
               icon: const Icon(Icons.close),
               onPressed: () {
@@ -182,15 +196,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 });
               },
             ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: () {
-                  Navigator.pushNamedAndRemoveUntil(context, '/list-kelas', (route) => false);
-                },
-                tooltip: 'Reload',
-              ),
-            ],
           ),
           body: WebViewWidget(controller: _controller),
         );
@@ -342,8 +347,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(label, style: const TextStyle(fontSize: 14)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         ],
       ),
     );

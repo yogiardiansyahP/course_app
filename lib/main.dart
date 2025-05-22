@@ -63,7 +63,6 @@ class _TokenLoaderPageState extends State<TokenLoaderPage> {
   void initState() {
     super.initState();
     _loadTokenAndNavigate();
-    // Hapus _initDeepLinks() dan semua kode deep link
   }
 
   Future<void> _loadTokenAndNavigate() async {

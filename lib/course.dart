@@ -1,9 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:project_akhir_app/materi.dart';
 import 'package:project_akhir_app/kelas.dart';
+import 'package:project_akhir_app/services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class CourseListPage extends StatelessWidget {
+class CourseListPage extends StatefulWidget {
   const CourseListPage({super.key});
+
+  @override
+  _CourseListPageState createState() => _CourseListPageState();
+}
+
+class _CourseListPageState extends State<CourseListPage> {
+  Future<List<Map<String, dynamic>>>? futurePurchasedCourses;
+  String? token;
+
+  @override
+  void initState() {
+    super.initState();
+    loadPurchasedCourses();
+  }
+
+  Future<void> loadPurchasedCourses() async {
+    final prefs = await SharedPreferences.getInstance();
+    token = prefs.getString('token');
+
+    if (token == null) {
+      throw Exception('Token tidak ditemukan');
+    }
+
+    final apiService = ApiService();
+    setState(() {
+      futurePurchasedCourses = apiService.getCoursesFromApi(token!);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,33 +80,60 @@ class CourseListPage extends StatelessWidget {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const KelasPage()),
+                        MaterialPageRoute(builder: (context) =>  KelasPage()),
                       );
                     },
                     child: Chip(
                       label: const Text(
                         "Lihat Lebih Banyak Kelas",
-                        style: TextStyle(fontSize: 10),
+                        style: TextStyle(fontSize: 9.5),
                       ),
                       backgroundColor: Colors.grey.shade200,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Chip(
-                    label: const Text(
-                      "Kursus yang sedang di pelajari",
-                      style: TextStyle(color: Colors.white, fontSize: 10),
+                  InkWell(
+                    onTap: () {
+                      // Arahkan ke halaman CourseListPage
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) =>  CourseListPage()),
+                      );
+                    },
+                    child: Chip(
+                      label: const Text(
+                        "Kursus yang sedang di pelajari",
+                        style: TextStyle(color: Colors.white, fontSize: 9.5),
+                      ),
+                      backgroundColor: const Color(0xFF3B82F6),
                     ),
-                    backgroundColor: const Color(0xFF3B82F6),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
 
-              // Course Cards
-              _buildCourseCard(context),
-              const SizedBox(height: 16),
-              _buildCourseCard(context),
+              // List of Courses
+              FutureBuilder<List<Map<String, dynamic>>>(
+                future: futurePurchasedCourses,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(child: Text('Belum ada kursus yang dibeli.'));
+                  }
+
+                  final courses = snapshot.data!;
+                  return ListView.builder(
+                    itemCount: courses.length,
+                    itemBuilder: (context, index) {
+                      final course = courses[index];
+                      return _buildCourseCard(context, course);
+                    },
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -84,7 +141,7 @@ class CourseListPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCourseCard(BuildContext context) {
+  Widget _buildCourseCard(BuildContext context, Map<String, dynamic> course) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -93,8 +150,8 @@ class CourseListPage extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-            child: Image.asset(
-              'asset/image/vidio.png',
+            child: Image.network(
+              course['thumbnail'] ?? '',
               height: 180,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -113,9 +170,9 @@ class CourseListPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Belajar Java Script Dari Nol",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                Text(
+                  course['name'] ?? 'Nama Course',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
                 const SizedBox(height: 8),
                 ElevatedButton(
@@ -124,14 +181,16 @@ class CourseListPage extends StatelessWidget {
                       context,
                       MaterialPageRoute(
                         builder: (context) => VideoLessonPage(
-                          courseName: 'JavaScript Dasar',
-                          title: 'Pengenalan JavaScript',
-                          description: 'Materi dasar untuk memahami konsep awal JavaScript.',
-                          videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                          hasAccess: true,
+                          courseName: course['name'] ?? '',
+                          title: course['first_video_title'] ?? '',
+                          description: course['first_video_description'] ?? '',
+                          videoUrl: course['first_video_url'] ?? '',
+                          hasAccess: true, // atur sesuai logika status pembayaran
                           hasPrev: false,
                           hasNext: true,
-                          onNext: () {},
+                          onNext: () {
+                            // Tambahkan logika untuk lanjut ke video berikutnya
+                          },
                           onPrev: null,
                         ),
                       ),

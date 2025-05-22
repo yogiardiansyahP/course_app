@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:project_akhir_app/hubungi_kami.dart';
 
 class VideoLessonPage extends StatefulWidget {
   final String courseName;
@@ -64,11 +65,11 @@ class _VideoLessonPageState extends State<VideoLessonPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pushReplacementNamed(context, '/list-kelas');
-          },
-        ),
+  icon: const Icon(Icons.arrow_back, color: Colors.black),
+  onPressed: () {
+    Navigator.pop(context); // Kembali ke halaman sebelumnya
+  },
+),
         title: Text(
           'Materi Kursus - ${widget.courseName}',
           style: const TextStyle(color: Colors.black),
@@ -109,14 +110,28 @@ class _VideoLessonPageState extends State<VideoLessonPage> {
                       ),
                     const SizedBox(height: 16),
                     Row(
-                      children: const [
-                        Text("Ada masalah dengan konten ini? "),
-                        Text(
-                          "Laporkan",
-                          style: TextStyle(color: Colors.red, decoration: TextDecoration.underline),
-                        ),
-                      ],
-                    ),
+  children: [
+    const Text("Ada masalah dengan konten ini? "),
+    GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const HubungiKamiPage(), // Ganti dengan nama kelas halaman kontak kamu
+          ),
+        );
+      },
+      child: const Text(
+        "Laporkan",
+        style: TextStyle(
+          color: Colors.red,
+          decoration: TextDecoration.underline,
+        ),
+      ),
+    ),
+  ],
+),
+
                     const Spacer(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,

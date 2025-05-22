@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:project_akhir_app/tentang_kami.dart';
-import 'package:project_akhir_app/kelas.dart';
-import 'package:project_akhir_app/hubungi_kami.dart'; // Import the HubungiKamiPage
-import 'package:project_akhir_app/login.dart'; // Import the LoginPage
+import 'package:project_akhir_app/course.dart';
+import 'package:project_akhir_app/hubungi_kami.dart';
+import 'package:project_akhir_app/sertifikat.dart';
+import 'package:project_akhir_app/login.dart';
 
 class ProfilScreen extends StatelessWidget {
   const ProfilScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Define some styles for reuse
     TextStyle textStyle = TextStyle(color: Colors.grey[700]);
     Color backgroundColor = Colors.grey[300]!;
 
@@ -23,7 +23,7 @@ class ProfilScreen extends StatelessWidget {
         children: [
           // User info container
           Container(
-            margin: const EdgeInsets.only(top: 16), // Margin atas
+            margin: const EdgeInsets.only(top: 16),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: backgroundColor,
@@ -70,7 +70,18 @@ class ProfilScreen extends StatelessWidget {
             onTap: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => KelasPage()),
+                MaterialPageRoute(builder: (context) => CourseListPage()),
+              );
+            },
+          ),
+          Divider(height: 1),
+          ListTile(
+            title: Text("Sertifikat Saya"),
+            trailing: Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CertificatePage()),
               );
             },
           ),
@@ -87,7 +98,6 @@ class ProfilScreen extends StatelessWidget {
           ListTile(
             title: Text("Keluar", style: TextStyle(color: Colors.red)),
             onTap: () {
-              // Simulasi logout and navigate to LoginPage
               showDialog(
                 context: context,
                 builder: (_) => AlertDialog(
@@ -95,16 +105,15 @@ class ProfilScreen extends StatelessWidget {
                   content: Text("Apakah kamu yakin ingin keluar?"),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.pop(context), // Close the dialog
+                      onPressed: () => Navigator.pop(context),
                       child: Text("Batal"),
                     ),
                     TextButton(
                       onPressed: () {
-                        // Navigate to LoginPage and remove all previous routes
                         Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(builder: (context) => LoginPage()),
-                          (route) => false, // Remove all previous routes
+                          (route) => false,
                         );
                       },
                       child: Text("Keluar", style: TextStyle(color: Colors.red)),
