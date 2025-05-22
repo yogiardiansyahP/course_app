@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:project_akhir_app/dashboard_user.dart';
-import 'package:project_akhir_app/kelas.dart';
 import 'package:project_akhir_app/materi.dart';
 import 'package:project_akhir_app/tentang_kami.dart';
 import 'package:project_akhir_app/profil.dart';
@@ -39,7 +38,6 @@ class MyApp extends StatelessWidget {
         '/profil': (context) => ProfilScreen(),
         '/tentang': (context) => const TentangScreen(),
         '/hubungi': (context) => const HubungiKamiPage(),
-        '/kelas': (context) => const KelasPage(),
         '/materi': (context) => const VideoLessonPage(
               courseName: '',
               title: '',
@@ -106,13 +104,13 @@ class _SplashScreenState extends State<SplashScreen> {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
 
-    if (token != null) {
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/dashboard');
-    } else {
-      if (!mounted) return;
-      Navigator.pushReplacementNamed(context, '/login');
-    }
+     if (token != null) {
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/dashboard');
+  } else {
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/login');  // pindah ke halaman login kalau token gak ada
+  }
   }
 
   @override

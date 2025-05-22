@@ -69,7 +69,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
           _loading = false;
         });
       } else {
-        // Handle case no courses found
         setState(() {
           _loading = false;
           courseName = '-';
@@ -117,7 +116,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
       print('Snap URL: $_snapUrl');
 
       if (kIsWeb) {
-        // Di Web langsung buka url eksternal
         final uri = Uri.parse(_snapUrl!);
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -125,9 +123,12 @@ class _CheckoutPageState extends State<CheckoutPage> {
           Navigator.pushNamedAndRemoveUntil(context, '/kelas', (route) => false);
         }
       } else {
-        // Android/iOS pakai WebView
         if (Platform.isAndroid || Platform.isIOS) {
-          _controller.loadRequest(Uri.parse(_snapUrl!));
+          _controller.loadRequest(Uri.parse(_snapUrl!)).then((_) {
+            print('WebView loaded successfully');
+          }).catchError((error) {
+            print('Error loading WebView: $error');
+          });
           setState(() {
             _showMidtransWebView = true;
           });
@@ -141,23 +142,75 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
+  bool _hasNavigatedToSuccess = false;
+
+  bool isSuccessNavigation(String url) {
+    try {
+      final uri = Uri.parse(url);
+      final orderId = uri.queryParameters['order_id'] ?? '';
+      return uri.path == '/payment/success' &&
+          uri.queryParameters['transaction_status'] == 'settlement' &&
+          orderId.startsWith('ORDER-');
+    } catch (e) {
+      return false;
+    }
+  }
+
   NavigationDecision _handleNavigation(NavigationRequest request) {
     final url = request.url;
     print('Navigating to: $url');
 
-    // Cek jika URL sudah mengindikasikan selesai bayar
-    if (url.contains('finish') || url.contains('pending') || url.contains('error')) {
+    if (isSuccessNavigation(url) && !_hasNavigatedToSuccess) {
+      _hasNavigatedToSuccess = true; // tandai sudah navigasi
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Pembayaran selesai')),
+        const SnackBar(content: Text('Pembayaran berhasil')),
       );
-      setState(() {
-        _showMidtransWebView = false;
-      });
-      Navigator.pushNamedAndRemoveUntil(context, '/kelas', (route) => false);
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Pembayaran Berhasil'),
+            content: const Text('Anda telah berhasil melakukan pembayaran. Apakah Anda ingin menuju ke halaman Pelajaran?'),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Tidak'),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+              ),
+              TextButton(
+                child: const Text('Ya'),
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                  Navigator.pushReplacementNamed(context, '/list-kelas');
+; // Navigate to CourseListPage
+                },
+              ),
+            ],
+          );
+        },
+      );
+
       return NavigationDecision.prevent;
     }
 
     return NavigationDecision.navigate;
+  }
+
+  Future<void> _reloadWebView() async {
+    if (_snapUrl != null) {
+      final currentUrl = await _controller.currentUrl();
+      print('Current URL: $currentUrl');
+
+      if (isSuccessNavigation(currentUrl!)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pembayaran telah berhasil')),
+        );
+      } else {
+        _controller.reload();
+      }
+    }
   }
 
   @override
@@ -169,11 +222,10 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
 
     if (_showMidtransWebView && _snapUrl != null) {
-      // HANYA tampilkan WebView jika bukan web
       if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Pembayaran'),
+            title: const Text('CodeIn'),
             leading: IconButton(
               icon: const Icon(Icons.close),
               onPressed: () {
@@ -182,17 +234,22 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 });
               },
             ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: _reloadWebView,
+              ),
+            ],
           ),
           body: WebViewWidget(controller: _controller),
         );
       }
-      // Jika web tapi _showMidtransWebView true, tampilkan loading saja
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Pembayaran'),
+        title: const Text('Pembayaran - CodeIn'),
         leading: const BackButton(color: Colors.black),
         backgroundColor: Colors.white,
         elevation: 1,
@@ -233,6 +290,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                       height: 70,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
+                        print('Error loading image: $error');
                         return Container(
                           width: 100,
                           height: 70,
@@ -291,43 +349,43 @@ class _CheckoutPageState extends State<CheckoutPage> {
               icon: const Icon(Icons.check),
               onPressed: _applyVoucher,
             ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),
         const SizedBox(height: 24),
         SizedBox(
           width: double.infinity,
-          height: 50,
           child: ElevatedButton(
             onPressed: _handlePayment,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF60A5FA),
+              backgroundColor: const Color(0xFF3B82F6),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: const Text('Bayar Sekarang', style: TextStyle(color: Colors.white, fontSize: 16)),
+            child: const Text('Beli Sekarang', style: TextStyle(color: Colors.white)),
           ),
         ),
       ],
     );
   }
 
-  static Widget _paymentMethodTile(IconData icon, String label) {
+  Widget _paymentMethodTile(IconData icon, String method) {
     return Container(
-      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(12),
+        color: Colors.grey.shade200,
       ),
+      padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Icon(icon, size: 30),
-          const SizedBox(width: 12),
-          Text(label, style: const TextStyle(fontSize: 16)),
+          Icon(icon, size: 28),
+          const SizedBox(width: 16),
+          Text(method, style: const TextStyle(fontWeight: FontWeight.bold)),
         ],
       ),
     );
   }
 
-  static Widget _detailRow(String label, String value) {
+  Widget _detailRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(

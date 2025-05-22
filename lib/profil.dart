@@ -1,133 +1,108 @@
 import 'package:flutter/material.dart';
 import 'package:project_akhir_app/tentang_kami.dart';
-
 import 'package:project_akhir_app/course.dart';
-import 'package:project_akhir_app/hubungi_kami.dart'; // Import the HubungiKamiPage
-import 'package:project_akhir_app/sertifikat.dart'; // Import the HubungiKamiPage
-import 'package:project_akhir_app/login.dart'; // Import the LoginPage
+import 'package:project_akhir_app/hubungi_kami.dart';
+import 'package:project_akhir_app/sertifikat.dart';
+import 'package:project_akhir_app/login.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class ProfilScreen extends StatelessWidget {
+class ProfilScreen extends StatefulWidget {
   const ProfilScreen({super.key});
 
   @override
+  _ProfilScreenState createState() => _ProfilScreenState();
+}
+
+class _ProfilScreenState extends State<ProfilScreen> {
+  // Hapus semua variabel dan fungsi terkait profil/data user
+
+  void navigateTo(Widget page) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => page),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Define some styles for reuse
-    TextStyle textStyle = TextStyle(color: Colors.grey[700]);
     Color backgroundColor = Colors.grey[300]!;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Akun saya'),
+        title: const Text('Akun saya'),
         backgroundColor: backgroundColor,
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: ListView(
         children: [
-          // User info container
-          Container(
-            margin: const EdgeInsets.only(top: 16), // Margin atas
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: backgroundColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("yogi ardiansyah pratama", style: TextStyle(fontSize: 16)),
-                Text("yogi@gmail.com", style: textStyle),
-              ],
-            ),
-          ),
-          Divider(),
-          
-          // Tentang Kami
+          // Hapus widget profileHeader dan semua terkait
+
           ListTile(
-            title: Text("Tentang Kami"),
-            trailing: Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const TentangScreen()),
-              );
-            },
+            title: const Text("Tentang Kami"),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => navigateTo(const TentangScreen()),
           ),
-          Divider(height: 1),
-          
-          // Hubungi Kami
+          const Divider(height: 1),
+
           ListTile(
-            title: Text("Hubungi Kami"),
-            trailing: Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => HubungiKamiPage()),
-              );
-            },
+            title: const Text("Hubungi Kami"),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => navigateTo(HubungiKamiPage()),
           ),
-          Divider(height: 1),
+          const Divider(height: 1),
+
           ListTile(
-            title: Text("Course Saya"),
-            trailing: Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => CourseListPage()),
-              );
-            },
+            title: const Text("Course Saya"),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => navigateTo(CourseList()),
           ),
-          Divider(height: 1),
+          const Divider(height: 1),
+
           ListTile(
-            title: Text("Sertifikat Saya"),
-            trailing: Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) =>  CertificatePage()),
-              );
-            },
+            title: const Text("Sertifikat Saya"),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            onTap: () => navigateTo(CertificatePage()),
           ),
-          Divider(height: 1),
-          
-          // App version
-          ListTile(
+          const Divider(height: 1),
+
+          const ListTile(
             title: Text("Versi App"),
             trailing: Text("1.0.0"),
           ),
-          Divider(height: 1),
-          
-          // Logout
+          const Divider(height: 1),
+
           ListTile(
-            title: Text("Keluar", style: TextStyle(color: Colors.red)),
-            onTap: () {
-              // Simulasi logout and navigate to LoginPage
-              showDialog(
+            title: const Text("Keluar", style: TextStyle(color: Colors.red)),
+            onTap: () async {
+              final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (_) => AlertDialog(
-                  title: Text("Konfirmasi"),
-                  content: Text("Apakah kamu yakin ingin keluar?"),
+                  title: const Text("Konfirmasi"),
+                  content: const Text("Apakah kamu yakin ingin keluar?"),
                   actions: [
                     TextButton(
-                      onPressed: () => Navigator.pop(context), // Close the dialog
-                      child: Text("Batal"),
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text("Batal"),
                     ),
                     TextButton(
-                      onPressed: () {
-                        // Navigate to LoginPage and remove all previous routes
-                        Navigator.pushAndRemoveUntil(
-                          context,
-                          MaterialPageRoute(builder: (context) => LoginPage()),
-                          (route) => false, // Remove all previous routes
-                        );
-                      },
-                      child: Text("Keluar", style: TextStyle(color: Colors.red)),
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text("Keluar", style: TextStyle(color: Colors.red)),
                     ),
                   ],
                 ),
               );
+              if (confirmed == true) {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
+                if (!mounted) return;
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                  (route) => false,
+                );
+              }
             },
           ),
-          Divider(height: 1),
+          const Divider(height: 1),
         ],
       ),
     );
