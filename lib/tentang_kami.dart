@@ -45,7 +45,7 @@ class TentangScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Image.asset(
-                          'assets/css.png',
+                          'asset/icon/css.png',
                           height: 32,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
@@ -64,7 +64,7 @@ class TentangScreen extends StatelessWidget {
                           ),
                         ),
                         Image.asset(
-                          'assets/html.png',
+                          'asset/icon/html.png',
                           height: 32,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
@@ -110,7 +110,7 @@ SizedBox(
       padding: const EdgeInsets.symmetric(vertical: 12),
     ),
     child: const Text(
-      'Hubungi Aku',
+      'Hubungi',
       style: TextStyle(fontSize: 16, color: Colors.white),
     ),
   ),

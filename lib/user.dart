@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:project_akhir_app/services/api_service.dart';
 import 'package:project_akhir_app/profil.dart';
 import 'package:project_akhir_app/checkout.dart';
@@ -31,24 +30,12 @@ class CourseHomePage extends StatefulWidget {
 }
 
 class _CourseHomePageState extends State<CourseHomePage> {
-  late Future<List<double>> _progressData;
   late Future<List<dynamic>> _coursesFuture;
 
   @override
   void initState() {
     super.initState();
-    _progressData = _fetchProgressData();
     _coursesFuture = _fetchCourses();
-  }
-
-  Future<List<double>> _fetchProgressData() async {
-    try {
-      ApiService apiService = ApiService();
-      final progressData = await apiService.getChartProgress(widget.token);
-      return progressData;
-    } catch (e) {
-      throw Exception('Failed to load progress data: $e');
-    }
   }
 
   Future<List<dynamic>> _fetchCourses() async {
@@ -104,85 +91,21 @@ class _CourseHomePageState extends State<CourseHomePage> {
                       final int originalPrice = priceData is int
                           ? priceData
                           : int.tryParse(priceData.toString()) ?? 0;
-                      final int discountedPrice = (originalPrice - 30000).clamp(0, originalPrice);
                       final String thumbnail = course['thumbnail'] ?? '';
                       final String mentor = course['mentor'] ?? 'Mentor Tidak Diketahui';
+                      final int id = course['id'] ?? 0;
 
                       return _courseCard(
                         context,
+                        id,
                         courseTitle,
                         originalPrice,
-                        discountedPrice,
                         thumbnail,
                         mentor,
                         widget.token,
                       );
                     }).toList(),
                   );
-                }
-              },
-            ),
-            const SizedBox(height: 20),
-            const Text("Progress Belajar", style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            FutureBuilder<List<double>>(
-              future: _progressData,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (snapshot.hasData) {
-                  List<double> progressData = snapshot.data!;
-                  return Container(
-                    height: 200,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey.shade300),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: LineChart(
-                        LineChartData(
-                          gridData: FlGridData(show: false),
-                          titlesData: FlTitlesData(
-                            bottomTitles: AxisTitles(
-                              sideTitles: SideTitles(
-                                showTitles: true,
-                                interval: 1,
-                                getTitlesWidget: (value, _) {
-                                  const months = [
-                                    'J', 'F', 'M', 'A', 'M', 'J',
-                                    'J', 'A', 'S', 'O', 'N', 'D'
-                                  ];
-                                  return Text(
-                                    months[value.toInt() % months.length],
-                                    style: const TextStyle(fontSize: 10),
-                                  );
-                                },
-                              ),
-                            ),
-                            leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                          ),
-                          lineBarsData: [
-                            LineChartBarData(
-                              spots: List.generate(progressData.length, (index) {
-                                return FlSpot(index.toDouble(), progressData[index]);
-                              }),
-                              isCurved: true,
-                              color: Colors.blue,
-                              dotData: FlDotData(show: false),
-                              belowBarData: BarAreaData(show: false),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                } else {
-                  return const Center(child: Text('No progress data available'));
                 }
               },
             ),
@@ -194,18 +117,17 @@ class _CourseHomePageState extends State<CourseHomePage> {
 
   Widget _courseCard(
     BuildContext context,
+    int id,
     String courseTitle,
     int originalPrice,
-    int discountedPrice,
     String thumbnail,
     String mentor,
     String token,
   ) {
     final Map<String, dynamic> checkoutData = {
+      'id': id,
       'course_name': courseTitle,
       'hargaAwal': originalPrice,
-      'hargaDiskon': discountedPrice,
-      'voucher': 'CODEINCOURSEIDNBGR',
       'mentor': mentor,
     };
 
@@ -285,22 +207,14 @@ class _CourseHomePageState extends State<CourseHomePage> {
                     style: const TextStyle(fontSize: 13, color: Colors.grey),
                   ),
                   const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Text(
-                        "Rp. ${_formatRupiah(originalPrice)}",
-                        style: const TextStyle(
-                          color: Colors.red,
-                          decoration: TextDecoration.lineThrough,
-                          fontSize: 13,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        "Rp. ${_formatRupiah(discountedPrice)}",
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                      ),
-                    ],
+                  Text(
+                    "Course ID: $id",
+                    style: const TextStyle(fontSize: 13, color: Colors.black54),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    "Rp. ${_formatRupiah(originalPrice)}",
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                   ),
                 ],
               ),
@@ -312,7 +226,7 @@ class _CourseHomePageState extends State<CourseHomePage> {
   }
 
   String _formatRupiah(int value) {
-    final formatter = NumberFormat('#,##0', 'id_ID');
-    return formatter.format(value).replaceAll(',', '.');
+    final formatter = NumberFormat('#,###', 'id_ID');
+    return formatter.format(value);
   }
 }

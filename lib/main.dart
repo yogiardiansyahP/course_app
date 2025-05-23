@@ -38,13 +38,22 @@ class MyApp extends StatelessWidget {
         '/profil': (context) => ProfilScreen(),
         '/tentang': (context) => const TentangScreen(),
         '/hubungi': (context) => const HubungiKamiPage(),
-        '/materi': (context) => const VideoLessonPage(
-              courseName: '',
-              title: '',
-              description: '',
-              videoUrl: '',
-              hasAccess: false,
+      },
+            onGenerateRoute: (settings) {
+        if (settings.name == '/materi') {
+          final args = settings.arguments as Map<String, dynamic>;
+
+          return MaterialPageRoute(
+            builder: (_) => CourseMaterialPage(
+              courseName: args['courseName'] as String,
+              materials: List<Map<String, String>>.from(args['materials']),
+              currentSlug: args['currentSlug'] as String,
+              status: args['status'] as String,
             ),
+          );
+        }
+        // fallback route / default route
+        return null;
       },
     );
   }
@@ -106,7 +115,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
      if (token != null) {
     if (!mounted) return;
-    Navigator.pushReplacementNamed(context, '/dashboard');
+    Navigator.pushReplacementNamed(context, '/list-kelas');
   } else {
     if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/login');  // pindah ke halaman login kalau token gak ada

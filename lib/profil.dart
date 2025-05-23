@@ -14,7 +14,21 @@ class ProfilScreen extends StatefulWidget {
 }
 
 class _ProfilScreenState extends State<ProfilScreen> {
-  // Hapus semua variabel dan fungsi terkait profil/data user
+  String? token;
+
+  @override
+  void initState() {
+    super.initState();
+    loadToken();
+  }
+
+  Future<void> loadToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final savedToken = prefs.getString('token'); // Ganti sesuai key token kamu
+    setState(() {
+      token = savedToken;
+    });
+  }
 
   void navigateTo(Widget page) {
     Navigator.push(
@@ -34,8 +48,6 @@ class _ProfilScreenState extends State<ProfilScreen> {
       ),
       body: ListView(
         children: [
-          // Hapus widget profileHeader dan semua terkait
-
           ListTile(
             title: const Text("Tentang Kami"),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
@@ -60,7 +72,9 @@ class _ProfilScreenState extends State<ProfilScreen> {
           ListTile(
             title: const Text("Sertifikat Saya"),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-            onTap: () => navigateTo(CertificatePage()),
+            onTap: token == null
+                ? null
+                : () => navigateTo(CertificateDashboardPage(token: token!)),
           ),
           const Divider(height: 1),
 

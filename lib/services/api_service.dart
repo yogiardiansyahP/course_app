@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
   final String baseUrl = 'https://codeinko.com/api';
    final String snapTokenBaseUrl = 'https://codeinko.com/';
+   final storage = FlutterSecureStorage();
 
   Future<http.Response> postData(String endpoint, Map<String, dynamic> body, {String? token, bool useSnapTokenBaseUrl = false}) {
     final String fullUrl = useSnapTokenBaseUrl 
@@ -22,7 +24,8 @@ class ApiService {
     );
   }
 
-Future<List<double>> getChartProgress(String token) async {
+
+  Future<Map<String, double>> getChartProgress(String token, List<dynamic> courses) async {
   final response = await http.post(
     Uri.parse('$baseUrl/progress-chart'),
     headers: {
@@ -30,11 +33,29 @@ Future<List<double>> getChartProgress(String token) async {
       'Authorization': 'Bearer $token',
     },
   );
-  
+
   if (response.statusCode == 200) {
     try {
       List<dynamic> data = jsonDecode(response.body);
-      return data.map((e) => double.tryParse(e.toString()) ?? 0.0).toList();
+
+      Map<String, double> progressMapLocal = {};
+      for (int i = 0; i < courses.length; i++) {
+        String courseName = courses[i]['name'] ?? 'Unknown Course';
+        double progress = 0.0;
+
+        if (i < data.length) {
+          final value = data[i];
+          if (value is String) {
+            progress = double.tryParse(value) ?? 0.0;
+          } else if (value is num) {
+            progress = value.toDouble();
+          }
+        }
+
+        progressMapLocal[courseName] = progress;
+      }
+
+      return progressMapLocal;
     } catch (e) {
       throw Exception('Failed to decode progress data: $e');
     }
@@ -79,6 +100,69 @@ Future<List<double>> getChartProgress(String token) async {
     }
   }
 
+  Future<int?> getCourseIdByMaterialSlug(String slug, String token) async {
+  try {
+    List<dynamic> courses = await getCoursesFromApi(token);
+    for (var course in courses) {
+      List<dynamic> materials = course['materials'] ?? [];
+      if (materials.any((m) => m['slug'] == slug)) {
+        return course['id'];
+      }
+    }
+    return null;
+  } catch (e) {
+    throw Exception("Gagal mendapatkan course_id: $e");
+  }
+}
+
+Future<List<dynamic>> fetchCertificates(String token) async {
+  final url = Uri.parse('$baseUrl/certificates');
+  final response = await http.get(
+    url,
+    headers: {
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+
+  print('Response status: ${response.statusCode}');
+  print('Response body: ${response.body}');
+
+  if (response.statusCode == 200) {
+    final data = json.decode(response.body);
+    if (data is Map && data['certificates'] != null) {
+      return data['certificates'];
+    }
+    return [];
+  } else {
+    throw Exception('Failed to load certificates, status code: ${response.statusCode}');
+  }
+}
+
+ Future<Map<String, dynamic>> fetchCertificateById(String token, int id) async {
+  final url = Uri.parse('$baseUrl/certificates/$id');
+  final response = await http.get(
+    url,
+    headers: {
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+
+  print('Response status: ${response.statusCode}');
+  print('Response body: ${response.body}');
+
+  if (response.statusCode == 200) {
+    final data = json.decode(response.body);
+    if (data is Map && data['certificate'] != null) {
+      return data['certificate'];
+    }
+    throw Exception('Key "certificate" tidak ditemukan di response');
+  } else {
+    throw Exception('Failed to load certificate, status code: ${response.statusCode}');
+  }
+}
+
     Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await postData('/login', {'email': email, 'password': password});
     if (response.statusCode == 200) {
@@ -95,14 +179,74 @@ Future<List<double>> getChartProgress(String token) async {
     }
   }
 
-  Future<int> getUserId() async {
-    final prefs = await SharedPreferences.getInstance();
-    final id = prefs.getInt('user_id');
-    if (id == null || id == 0) {
-      throw Exception('user_id tidak ditemukan atau 0');
-    }
-    return id;
+Future<int> getUserId({bool fromUserIdKey = true}) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  // Pilih key sesuai mode
+  final key = fromUserIdKey ? 'user_id' : 'id';
+  final id = prefs.getInt(key);
+
+  if (id == null || id == 0) {
+    throw Exception('$key tidak ditemukan atau 0');
   }
+  return id;
+}
+
+
+    Future<bool> saveProgress(String slug, String token) async {
+    final url = Uri.parse('$baseUrl/materi/save/$slug');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('Progress saved: ${data['message']}');
+        return true;
+      } else {
+        print('Failed to save progress: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Error saving progress: $e');
+      return false;
+    }
+  }
+
+    Future<String> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token') ?? '';
+  }
+
+  Future<bool> completeCourseCertificate(int courseId) async {
+    final token = await getToken();
+    final url = Uri.parse('$baseUrl/certificates/complete/$courseId');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      print(data['message']);
+      return true;
+    } else {
+      final data = json.decode(response.body);
+      print(data['message']);
+      return false;
+    }
+  }
+
 
   Future<Map<String, dynamic>> register(String name, String email, String password, String passwordConfirmation) async {
     if (password != passwordConfirmation) {
@@ -193,7 +337,6 @@ Future<List<double>> getChartProgress(String token) async {
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
-          'Accept': 'application/json',
         },
         body: jsonEncode({
           'hargaAwal': hargaAwal,
@@ -223,24 +366,36 @@ Future<List<double>> getChartProgress(String token) async {
   }
 
 
-  Future<Map<String, dynamic>> saveTransaction(String token, Map<String, dynamic> transactionData) async {
-    try {
-      if (!transactionData.containsKey('user_id')) {
-        transactionData['user_id'] = await getUserId();
-      }
-
-      final response = await postData('/checkout/save', transactionData, token: token);
-
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
-      } else {
-        print('Response error: ${response.body}');
-        throw Exception('Failed to save transaction');
-      }
-    } catch (e) {
-      throw Exception('Error occurred while saving transaction: $e');
+Future<Map<String, dynamic>> saveTransaction(String token, Map<String, dynamic> transactionData) async {
+  try {
+    if (!transactionData.containsKey('user_id')) {
+      transactionData['user_id'] = await getUserId();
     }
+
+    // Pastikan key-nya sesuai dengan yang Laravel butuhkan:
+    final body = {
+      'order_id': transactionData['order_id'],
+      'user_id': transactionData['user_id'],
+      'hargaAwal': transactionData['harga_awal'] ?? transactionData['hargaAwal'] ?? 0,
+      'hargaDiskon': transactionData['harga_diskon'] ?? transactionData['hargaDiskon'] ?? 0,
+      'voucher': transactionData['voucher'] ?? '',
+      'course_name': transactionData['course_name'] ?? '',
+      'status': transactionData['status'] ?? '',
+    };
+
+    final response = await postData('/checkout/save', body, token: token);
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      print('Response error: ${response.body}');
+      throw Exception('Failed to save transaction');
+    }
+  } catch (e) {
+    throw Exception('Error occurred while saving transaction: $e');
   }
+}
+
 
   Future<Map<String, dynamic>> updateProfile(String token, Map<String, dynamic> profileData) async {
     final response = await http.put(
@@ -280,15 +435,26 @@ Future<List<double>> getChartProgress(String token) async {
     }
   }
 
-  Future<Map<String, dynamic>> getTransaction(String token, int transactionId) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/transactions/$transactionId'),
-      headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $token'},
+    Future<List<Map<String, dynamic>>> getUserTransactions(String token) async {
+    final url = Uri.parse('$baseUrl/transactions');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
     );
+
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+      final jsonResponse = jsonDecode(response.body);
+      final List<dynamic> transactions = jsonResponse['transactions'];
+
+      return transactions
+          .map<Map<String, dynamic>>((item) => Map<String, dynamic>.from(item))
+          .toList();
     } else {
-      throw Exception('Failed to load transaction');
+      throw Exception('Failed to load transactions. Status: ${response.statusCode}');
     }
   }
 

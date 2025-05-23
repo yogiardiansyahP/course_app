@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:project_akhir_app/services/api_service.dart';
 import 'package:project_akhir_app/checkout.dart';
 
@@ -12,25 +14,91 @@ class KelasPage extends StatefulWidget {
 }
 
 class _KelasPageState extends State<KelasPage> {
-  late Future<List<dynamic>> _coursesFuture;
+  List<dynamic> _courses = [];
+  Map<String, bool> hasAccessMap = {}; // key: courseName, value: akses (paid or not)
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _coursesFuture = _fetchCourses();
+    loadCoursesAndCheckAccess();
   }
 
-  Future<List<dynamic>> _fetchCourses() async {
+  Future<void> loadCoursesAndCheckAccess() async {
+    setState(() {
+      isLoading = true;
+    });
+
     try {
       ApiService apiService = ApiService();
-      return await apiService.getCoursesFromApi(widget.token);
+      final courses = await apiService.getCoursesFromApi(widget.token);
+      final transactions = await getUserTransactions(widget.token);
+
+      // Buat map akses per nama course
+      Map<String, bool> accessMap = {};
+      for (var course in courses) {
+        final courseName = course['name'] ?? '';
+        final hasAccess = transactions.any((t) =>
+            (t['course_name']?.toString().toLowerCase() ?? '') ==
+            courseName.toString().toLowerCase());
+        accessMap[courseName] = hasAccess;
+      }
+
+      setState(() {
+        _courses = courses;
+        hasAccessMap = accessMap;
+        isLoading = false;
+      });
     } catch (e) {
-      throw Exception('Gagal memuat course: $e');
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal memuat kelas dan transaksi')),
+      );
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getUserTransactions(String token) async {
+    final baseUrl = 'https://codeinko.com/api';
+    final url = Uri.parse('$baseUrl/transactions');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final List<dynamic> transactions = jsonResponse['transactions'];
+
+      return transactions
+          .map<Map<String, dynamic>>((item) => Map<String, dynamic>.from(item))
+          .toList();
+    } else {
+      throw Exception('Failed to load transactions. Status: ${response.statusCode}');
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Kembali', style: TextStyle(color: Colors.black)),
+          leading: const BackButton(color: Colors.black),
+          backgroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Kembali', style: TextStyle(color: Colors.black)),
@@ -40,65 +108,51 @@ class _KelasPageState extends State<KelasPage> {
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: ListView(
-          children: [
-            const SizedBox(height: 12),
-            const Text(
-              'Kelas yang tersedia',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Jelajahi berbagai pilihan kelas dan tingkatkan keterampilan anda.',
-              style: TextStyle(fontSize: 14, color: Colors.black54),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            FutureBuilder<List<dynamic>>(
-              future: _coursesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                } else if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
-                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Text("Tidak ada course tersedia");
-                } else {
-                  final courses = snapshot.data!;
-                  return ListView.builder(
+        child: _courses.isEmpty
+            ? const Center(child: Text("Tidak ada course tersedia"))
+            : ListView(
+                children: [
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Kelas yang tersedia',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Jelajahi berbagai pilihan kelas dan tingkatkan keterampilan anda.',
+                    style: TextStyle(fontSize: 14, color: Colors.black54),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    itemCount: courses.length,
+                    itemCount: _courses.length,
                     itemBuilder: (context, index) {
-                      final course = courses[index];
+                      final course = _courses[index];
                       final String courseTitle = course['name'] ?? 'Tanpa Judul';
-                      final dynamic priceData = course['price'];
-                      final int originalPrice = priceData is int
-                          ? priceData
-                          : int.tryParse(priceData.toString()) ?? 0;
-                      final int discountedPrice = (originalPrice - 30000).clamp(0, originalPrice);
+                      final int price = int.tryParse(course['price'].toString()) ?? 0;
                       final String thumbnail = course['thumbnail'] ?? '';
                       final String mentor = course['mentor'] ?? 'Mentor Tidak Diketahui';
                       final String imageUrl = 'https://codeinko.com/storage/$thumbnail';
+                      final bool isActive = hasAccessMap[courseTitle] ?? false;
 
                       return _buildCourseItem(
                         context,
                         imageUrl,
                         courseTitle,
-                        originalPrice,
-                        discountedPrice,
+                        price,
                         mentor,
+                        isActive,
+                        course,
                         widget.token,
                         key: ValueKey('$courseTitle-$index'),
                       );
                     },
-                  );
-                }
-              },
-            ),
-          ],
-        ),
+                  ),
+                ],
+              ),
       ),
     );
   }
@@ -107,22 +161,21 @@ class _KelasPageState extends State<KelasPage> {
     BuildContext context,
     String imageUrl,
     String title,
-    int originalPrice,
-    int discountedPrice,
+    int price,
     String mentor,
+    bool isActive,
+    Map<String, dynamic> course,
     String token, {
-    Key? key, // Tambahkan key sebagai parameter opsional
+    Key? key,
   }) {
     final Map<String, dynamic> checkoutData = {
       'course_name': title,
-      'hargaAwal': originalPrice,
-      'hargaDiskon': discountedPrice,
-      'voucher': 'CODEINCOURSEIDNBGR',
+      'hargaAwal': price,
       'mentor': mentor,
     };
 
     return Container(
-      key: key, // Gunakan key di sini
+      key: key,
       margin: const EdgeInsets.only(bottom: 20),
       child: Row(
         children: [
@@ -148,48 +201,37 @@ class _KelasPageState extends State<KelasPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Rp. ${originalPrice.toString()}',
-                  style: const TextStyle(
-                    color: Colors.red,
-                    decoration: TextDecoration.lineThrough,
-                    fontSize: 12,
-                  ),
-                ),
-                Text(
-                  'Rp. $discountedPrice',
-                  style: const TextStyle(fontSize: 14),
-                ),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text('Rp. $price', style: const TextStyle(fontSize: 14)),
                 const SizedBox(height: 6),
                 SizedBox(
                   height: 32,
                   child: ElevatedButton(
                     onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CheckoutPage(
-                            token: token,
-                            checkoutData: checkoutData,
+                      if (isActive) {
+                        Navigator.pushNamed(context, '/dashboard');
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CheckoutPage(
+                              token: token,
+                              checkoutData: checkoutData,
+                            ),
                           ),
-                        ),
-                      );
+                        );
+                      }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2563EB),
+                      backgroundColor: isActive ? Colors.green : const Color(0xFF2563EB),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
-                      'Beli',
-                      style: TextStyle(fontSize: 12, color: Colors.white),
+                    child: Text(
+                      isActive ? 'Paid' : 'Beli',
+                      style: const TextStyle(fontSize: 12, color: Colors.white),
                     ),
                   ),
                 )

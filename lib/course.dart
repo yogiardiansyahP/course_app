@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:project_akhir_app/materi.dart';
 import 'package:project_akhir_app/kelas.dart';
 import 'package:project_akhir_app/services/api_service.dart';
-import 'package:project_akhir_app/profil.dart'; // pastikan import ProfilScreen
+import 'package:project_akhir_app/profil.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class CourseList extends StatefulWidget {
@@ -31,12 +31,34 @@ class _CourseListPageState extends State<CourseList> {
     }
 
     final apiService = ApiService();
-    setState(() {
-      futurePurchasedCourses = apiService.getCoursesFromApi(token!).then(
-  (courses) => courses.cast<Map<String, dynamic>>(),
-);
 
-    });
+    try {
+      final coursesRaw = await apiService.getCoursesFromApi(token!);
+      print('Raw courses from API: $coursesRaw');
+
+      setState(() {
+        futurePurchasedCourses = Future.value(
+          coursesRaw.map<Map<String, dynamic>>((course) {
+            print('Course item: $course');
+            return {
+              'id': course['id'],
+              'courseId': course['id'],  // Pastikan ini ada dan benar
+              'name': course['name'],
+              'thumbnail': course['thumbnail'],
+              'mentor': course['mentor'],
+              'price': course['price'],
+              'materials': course['materials'],
+              'hasAccess': true,
+            };
+          }).toList(),
+        );
+      });
+    } catch (e) {
+      print('Error saat load courses: $e');
+      setState(() {
+        futurePurchasedCourses = Future.error(e);
+      });
+    }
   }
 
   @override
@@ -64,7 +86,7 @@ class _CourseListPageState extends State<CourseList> {
             children: [
               Center(
                 child: Image.asset(
-                  'assets/logo.png',
+                  'asset/image/logo.png',
                   width: 60,
                   height: 60,
                   errorBuilder: (context, error, stackTrace) {
@@ -89,7 +111,7 @@ class _CourseListPageState extends State<CourseList> {
                     },
                     child: Chip(
                       label: const Text(
-                        "Lihat Lebih Banyak Kelas",
+                        "Lihat Lebih Banyak Kelass",
                         style: TextStyle(fontSize: 9.5),
                       ),
                       backgroundColor: Colors.grey.shade200,
@@ -145,6 +167,8 @@ class _CourseListPageState extends State<CourseList> {
   }
 
   Widget _buildCourseCard(BuildContext context, Map<String, dynamic> course) {
+    final imageUrl = 'https://codeinko.com/storage/${course['thumbnail'] ?? ''}';
+
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -155,7 +179,7 @@ class _CourseListPageState extends State<CourseList> {
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
             child: Image.network(
-              course['thumbnail'] ?? '',
+              imageUrl,
               height: 180,
               width: double.infinity,
               fit: BoxFit.cover,
@@ -178,38 +202,65 @@ class _CourseListPageState extends State<CourseList> {
                   course['name'] ?? 'Nama Course',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                 ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => VideoLessonPage(
-                          courseName: course['name'] ?? '',
-                          title: course['first_video_title'] ?? '',
-                          description: course['first_video_description'] ?? '',
-                          videoUrl: course['first_video_url'] ?? '',
-                          hasAccess: true,
-                          hasPrev: false,
-                          hasNext: true,
-                          onNext: () {},
-                          onPrev: null,
-                        ),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF60A5FA),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  ),
-                  child: const Text(
-                    "Lanjutkan Belajar",
-                    style: TextStyle(color: Colors.white),
-                  ),
+                const SizedBox(height: 4),
+                Text(
+                  'ID: ${course['courseId'] ?? 'null'}',
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
                 ),
+                const SizedBox(height: 8),
+                // Tombol hanya tampil jika sudah bayar (hasAccess true)
+                if (course['hasAccess'] == true)
+                  ElevatedButton(
+                    onPressed: () {
+                    final rawMaterials = course['materials'];
+                    if (rawMaterials is List && rawMaterials.isNotEmpty) {
+                      final List<Map<String, String>> materials = rawMaterials.map<Map<String, String>>((m) {
+                        return {
+                          'slug': m['slug'] ?? '',
+                          'title': m['title'] ?? '',
+                          'video_url': m['video_url'] ?? '',
+                          'description': m['description'] ?? '',
+                          'nama_materi': m['title'] ?? '',
+                        };
+                      }).toList();
+
+                      final String currentSlug = materials[0]['slug'] ?? '';
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => CourseMaterialPage(
+                            courseName: course['name'] ?? '',
+                            materials: materials,
+                            currentSlug: currentSlug,
+                            status: 'settlement', // atau bisa disesuaikan dengan course['status'] jika ada
+                          ),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Materi belum tersedia untuk kursus ini.")),
+                      );
+                    }
+                  },
+
+                      style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF60A5FA),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    ),
+                    child: const Text(
+                      "Lanjutkan Belajar",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  )
+                else
+                  const Text(
+                    "Anda belum membeli kursus ini.",
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
               ],
             ),
           ),

@@ -1,49 +1,83 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:iamport_webview_flutter/iamport_webview_flutter.dart';
+import 'package:project_akhir_app/services/api_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
-import 'package:project_akhir_app/hubungi_kami.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
-class VideoLessonPage extends StatefulWidget {
+class CourseMaterialPage extends StatefulWidget {
   final String courseName;
-  final String title;
-  final String description;
-  final String videoUrl;
-  final bool hasAccess;
-  final VoidCallback? onPrev;
-  final VoidCallback? onNext;
-  final bool hasPrev;
-  final bool hasNext;
+  final List<Map<String, dynamic>> materials;
+  final String currentSlug;
+  final String status;
+  final bool autoPlayVideoFromDashboard;
 
-  const VideoLessonPage({
-    super.key,
+  const CourseMaterialPage({
     required this.courseName,
-    required this.title,
-    required this.description,
-    required this.videoUrl,
-    required this.hasAccess,
-    this.onPrev,
-    this.onNext,
-    this.hasPrev = false,
-    this.hasNext = false,
+    required this.materials,
+    required this.currentSlug,
+    required this.status,
+    this.autoPlayVideoFromDashboard = false,
+    super.key,
   });
 
   @override
-  State<VideoLessonPage> createState() => _VideoLessonPageState();
+  State<CourseMaterialPage> createState() => _CourseMaterialPageState();
 }
 
-class _VideoLessonPageState extends State<VideoLessonPage> {
+class _CourseMaterialPageState extends State<CourseMaterialPage> {
+  late int currentIndex;
+  late Map<String, dynamic> currentMaterial;
+  bool isLoading = true;
+  bool hasAccess = false;
+  int? userId;
+  bool isDone = false;
+  bool isCompleting = false;
+
   YoutubePlayerController? _youtubeController;
 
   @override
   void initState() {
     super.initState();
-    if (_isYoutubeUrl(widget.videoUrl)) {
-      final videoId = YoutubePlayer.convertUrlToId(widget.videoUrl);
-      if (videoId != null) {
-        _youtubeController = YoutubePlayerController(
-          initialVideoId: videoId,
-          flags: const YoutubePlayerFlags(autoPlay: false),
-        );
-      }
+    currentIndex = widget.materials.indexWhere((m) => m['slug'] == widget.currentSlug);
+    currentMaterial = widget.materials[currentIndex];
+    _initYoutubeControllerIfNeeded();
+
+    ApiService().getUserId().then((id) {
+      setState(() {
+        userId = id;
+      });
+      checkTransactionAccess();
+    });
+  }
+
+  void _initYoutubeControllerIfNeeded() {
+    final url = currentMaterial['video_url'] ?? '';
+    if (url.contains('youtube.com') || url.contains('youtu.be')) {
+      final videoId = YoutubePlayer.convertUrlToId(url) ?? '';
+      _youtubeController = YoutubePlayerController(
+        initialVideoId: videoId,
+        flags: YoutubePlayerFlags(
+          autoPlay: widget.autoPlayVideoFromDashboard,
+        ),
+      );
+    } else {
+      _youtubeController = null;
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant CourseMaterialPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentSlug != widget.currentSlug) {
+      currentIndex = widget.materials.indexWhere((m) => m['slug'] == widget.currentSlug);
+      currentMaterial = widget.materials[currentIndex];
+
+      _youtubeController?.dispose();
+      _initYoutubeControllerIfNeeded();
     }
   }
 
@@ -53,153 +87,277 @@ class _VideoLessonPageState extends State<VideoLessonPage> {
     super.dispose();
   }
 
-  bool _isYoutubeUrl(String url) {
-    return url.contains('youtube.com') || url.contains('youtu.be');
+  void showMessage(String message) {
+    Fluttertoast.showToast(msg: message, gravity: ToastGravity.BOTTOM);
+  }
+
+  Future<String> getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('token') ?? '';
+  }
+
+  Future<List<Map<String, dynamic>>> getUserTransactions(String token) async {
+    final baseUrl = 'https://codeinko.com/api';
+    final url = Uri.parse('$baseUrl/transactions');
+
+    final response = await http.post(
+      url,
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      final List<dynamic> transactions = jsonResponse['transactions'];
+
+      return transactions
+          .map<Map<String, dynamic>>((item) => Map<String, dynamic>.from(item))
+          .toList();
+    } else {
+      throw Exception('Failed to load transactions. Status: ${response.statusCode}');
+    }
+  }
+
+  Future<void> checkTransactionAccess() async {
+    try {
+      final token = await getToken();
+      final transactions = await getUserTransactions(token);
+      final matched = transactions.any((t) => t['course_name'] == widget.courseName);
+
+      setState(() {
+        hasAccess = matched;
+        isLoading = false;
+      });
+    } catch (e) {
+      showMessage("Gagal memeriksa transaksi.");
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Widget _buildVideoPlayer(String url) {
+    if (url.contains('youtube.com') || url.contains('youtu.be')) {
+      if (_youtubeController == null) {
+        return const Center(child: Text("Video tidak ditemukan"));
+      }
+      return YoutubePlayer(
+        controller: _youtubeController!,
+        showVideoProgressIndicator: true,
+      );
+    } else if (url.contains('vimeo.com')) {
+      final vimeoId = url.split('/').last;
+      final autoplayUrl = widget.autoPlayVideoFromDashboard
+          ? 'https://player.vimeo.com/video/$vimeoId?autoplay=1'
+          : 'https://player.vimeo.com/video/$vimeoId';
+
+      return SizedBox(
+        height: 315,
+        child: WebView(
+          initialUrl: autoplayUrl,
+          javascriptMode: JavascriptMode.unrestricted,
+        ),
+      );
+    } else {
+      if (widget.autoPlayVideoFromDashboard) {
+        Future.microtask(() async {
+          if (await canLaunchUrl(Uri.parse(url))) {
+            await launchUrl(Uri.parse(url));
+          }
+        });
+        return const Center(child: Text("Memutar video..."));
+      }
+
+      return ElevatedButton(
+        onPressed: () async {
+          if (await canLaunchUrl(Uri.parse(url))) {
+            await launchUrl(Uri.parse(url));
+          }
+        },
+        child: const Text('Lihat Video'),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (!hasAccess) {
+      return Scaffold(
+        appBar: AppBar(title: Text("Materi: ${widget.courseName}")),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text("Kamu belum menyelesaikan pembayaran."),
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text("Kembali ke Daftar Kelas"),
+              )
+            ],
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
-        title: Text(
-          'Materi Kursus - ${widget.courseName}',
-          style: const TextStyle(color: Colors.black),
-        ),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: widget.hasAccess ? _buildLessonContent() : _buildNoAccess(),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLessonContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          widget.title,
-          style: const TextStyle(
-            color: Color(0xFF3366FF),
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          widget.description,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 16),
-        if (_youtubeController != null)
-          YoutubePlayer(
-            controller: _youtubeController!,
-            showVideoProgressIndicator: true,
-          )
-        else
-          TextButton(
-            onPressed: () {
-              // Bisa gunakan url_launcher di sini jika ingin membuka URL video langsung
-            },
-            child: const Text("Lihat Video"),
-          ),
-        const SizedBox(height: 16),
-        Row(
+      appBar: AppBar(title: Text("Materi: ${widget.courseName}")),
+      drawer: Drawer(
+        child: ListView(
+          padding: const EdgeInsets.all(0),
           children: [
-            const Text("Ada masalah dengan konten ini? "),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const HubungiKamiPage(),
-                  ),
-                );
-              },
-              child: const Text(
-                "Laporkan",
-                style: TextStyle(
-                  color: Colors.red,
-                  decoration: TextDecoration.underline,
-                ),
+            DrawerHeader(
+              child: Text("Materi Kursus", style: Theme.of(context).textTheme.titleLarge),
+            ),
+            for (var materi in widget.materials)
+              ListTile(
+                title: Text(materi['nama_materi'] ?? '-'),
+                selected: materi['slug'] == widget.currentSlug,
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CourseMaterialPage(
+                        courseName: widget.courseName,
+                        materials: widget.materials,
+                        currentSlug: materi['slug']!,
+                        status: widget.status,
+                        autoPlayVideoFromDashboard: widget.autoPlayVideoFromDashboard,
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
           ],
         ),
-        const Spacer(),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ElevatedButton(
-              onPressed: widget.hasPrev ? widget.onPrev : null,
-              child: const Text("Kembali"),
-            ),
-            widget.hasNext
-                ? ElevatedButton.icon(
-                    onPressed: widget.onNext,
-                    icon: const Icon(Icons.arrow_forward),
-                    label: const Text("Selanjutnya"),
-                  )
-                : ElevatedButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => AlertDialog(
-                          title: const Text("Selesaikan Kursus"),
-                          content: const Text(
-                              "Kamu yakin ingin menyelesaikan kursus dan membuat sertifikat?"),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text("Batal"),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                // Tambahkan logika penyelesaian kursus di sini
-                              },
-                              child: const Text("Ya"),
-                            ),
-                          ],
-                        ),
-                      );
+            if (userId != null)
+              Text(
+                "User ID: $userId",
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
+              ),
+            const SizedBox(height: 8),
+            Text(currentMaterial['title'] ?? '-', style: Theme.of(context).textTheme.headlineSmall),
+            const SizedBox(height: 16),
+            _buildVideoPlayer(currentMaterial['video_url'] ?? ''),
+            const Spacer(),
+            ElevatedButton.icon(
+              onPressed: isDone
+                  ? null
+                  : () async {
+                      final token = await getToken();
+
+                      bool success = await ApiService().saveProgress(currentMaterial['slug'], token);
+
+                      if (success) {
+                        setState(() {
+                          isDone = true;
+                        });
+                        showMessage("Materi berhasil ditandai selesai.");
+                      } else {
+                        showMessage("Gagal menandai materi selesai.");
+                      }
                     },
-                    child: const Text("Selesai"),
-                  ),
+              icon: const Icon(Icons.check),
+              label: Text(isDone ? "Sudah Ditandai Selesai" : "Tandai Materi Selesai"),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: currentIndex > 0
+                      ? () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CourseMaterialPage(
+                                courseName: widget.courseName,
+                                materials: widget.materials,
+                                currentSlug: widget.materials[currentIndex - 1]['slug']!,
+                                status: widget.status,
+                                autoPlayVideoFromDashboard: widget.autoPlayVideoFromDashboard,
+                              ),
+                            ),
+                          );
+                        }
+                      : null,
+                  child: const Text("← Kembali"),
+                ),
+                currentIndex < widget.materials.length - 1
+                    ? ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CourseMaterialPage(
+                                courseName: widget.courseName,
+                                materials: widget.materials,
+                                currentSlug: widget.materials[currentIndex + 1]['slug']!,
+                                status: widget.status,
+                                autoPlayVideoFromDashboard: widget.autoPlayVideoFromDashboard,
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text("Selanjutnya →"),
+                      )
+                    : ElevatedButton(
+                        onPressed: isCompleting
+                            ? null
+                            : () async {
+                                final token = await getToken();
+                                final courseId = await ApiService().getCourseIdByMaterialSlug(currentMaterial['slug'], token);
+
+                                if (courseId == null) {
+                                  showMessage("ID kursus tidak ditemukan dari materi.");
+                                  return;
+                                }
+
+                                setState(() => isCompleting = true);
+                                final success = await ApiService().completeCourseCertificate(courseId);
+                                setState(() => isCompleting = false);
+
+                                if (success) {
+                                  showMessage("Kursus selesai! Sertifikat berhasil dibuat.");
+                                } else {
+                                  showMessage("Gagal memproses sertifikat.");
+                                }
+                              },
+                        child: isCompleting
+                            ? const SizedBox(
+                                height: 16,
+                                width: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text("Selesai & Dapatkan Sertifikat"),
+                      ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            TextButton(
+              onPressed: () {
+                showMessage("Silakan hubungi kami untuk melaporkan konten.");
+              },
+              child: const Text("Ada issue dengan konten ini? Laporkan!"),
+            ),
           ],
         ),
-      ],
-    );
-  }
-
-  Widget _buildNoAccess() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            "Kamu belum menyelesaikan pembayaran atau belum mendaftar pada kursus ini.",
-            style: TextStyle(fontSize: 16),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pushReplacementNamed(context, '/list-kelas');
-            },
-            child: const Text("Kembali ke Daftar Kelas"),
-          ),
-        ],
       ),
     );
   }
