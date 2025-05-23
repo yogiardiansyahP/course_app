@@ -7,7 +7,7 @@ plugins {
 android {
     namespace = "com.codeIn.course"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = "27.0.12077973"
+    ndkVersion = ""
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

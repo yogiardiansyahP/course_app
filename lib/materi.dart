@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:iamport_webview_flutter/iamport_webview_flutter.dart';
 import 'package:project_akhir_app/services/api_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:project_akhir_app/hubungi_kami.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart' as http;
@@ -351,11 +352,15 @@ class _CourseMaterialPageState extends State<CourseMaterialPage> {
             ),
             const SizedBox(height: 20),
             TextButton(
-              onPressed: () {
-                showMessage("Silakan hubungi kami untuk melaporkan konten.");
-              },
-              child: const Text("Ada issue dengan konten ini? Laporkan!"),
-            ),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => HubungiKamiPage()),
+    );
+  },
+  child: const Text("Ada issue dengan konten ini? Laporkan!"),
+),
+
           ],
         ),
       ),
